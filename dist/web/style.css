@@ -287,6 +287,11 @@ nav button {
     /* image-rendering: optimizeSpeed; */    
 }
 
+#simContainer img:not([src]),
+#simContainer img[src=""] {
+    display: none !important;
+}
+
 #simContainer canvas {
     position: absolute;
     top: 8.7%;

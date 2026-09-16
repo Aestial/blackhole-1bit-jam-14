@@ -1,5 +1,5 @@
 // =============================================================================
-// blackhole.ino — Arduino Entry Point for Supermassive Blackhole
+// supermassive-whitehole.ino — Arduino Entry Point for Supermassive Whitehole
 // =============================================================================
 //
 // PURPOSE:
@@ -27,11 +27,11 @@
 //
 // =============================================================================
 
-#include <Arduboy2.h>
-#include "src/platform/arduboy/arduboy_renderer.h"
-#include "src/platform/arduboy/arduboy_input.h"
-#include "src/platform/arduboy/arduboy_storage.h"
 #include "src/game/game.h"
+#include "src/platform/arduboy/arduboy_input.h"
+#include "src/platform/arduboy/arduboy_renderer.h"
+#include "src/platform/arduboy/arduboy_storage.h"
+#include <Arduboy2.h>
 
 // =============================================================================
 // Global instances
@@ -39,36 +39,37 @@
 // These are created once and live for the entire program lifetime.
 // No dynamic allocation — everything is static.
 
-Arduboy2 arduboy;                       // Hardware abstraction (Arduboy2 library)
-ArduboyRenderer renderer(arduboy);      // Renderer HAL → wraps Arduboy2 draw calls
-ArduboyInput input(arduboy);            // Input HAL → wraps Arduboy2 button calls
-ArduboyStorage storage;                 // Storage HAL → wraps EEPROM
-Game game;                              // The game itself
+Arduboy2 arduboy;                  // Hardware abstraction (Arduboy2 library)
+ArduboyRenderer renderer(arduboy); // Renderer HAL → wraps Arduboy2 draw calls
+ArduboyInput input(arduboy);       // Input HAL → wraps Arduboy2 button calls
+ArduboyStorage storage;            // Storage HAL → wraps EEPROM
+Game game;                         // The game itself
 
 // =============================================================================
 // setup() — Called once at power-on / reset
 // =============================================================================
 void setup() {
-    arduboy.begin();
-    arduboy.setFrameRate(TARGET_FPS);
-    game.init(storage);
+  arduboy.begin();
+  arduboy.setFrameRate(TARGET_FPS);
+  game.init(storage);
 }
 
 // =============================================================================
 // loop() — Called repeatedly (main game loop)
 // =============================================================================
 void loop() {
-    // Wait until it's time for the next frame (60 FPS timing)
-    if (!arduboy.nextFrame()) return;
+  // Wait until it's time for the next frame (60 FPS timing)
+  if (!arduboy.nextFrame())
+    return;
 
-    // 1. Poll button state (must be before any input checks)
-    input.poll();
+  // 1. Poll button state (must be before any input checks)
+  input.poll();
 
-    // 2. Update game logic
-    game.update(input);
+  // 2. Update game logic
+  game.update(input);
 
-    // 3. Render
-    renderer.clear();
-    game.render(renderer);
-    renderer.display();
+  // 3. Render
+  renderer.clear();
+  game.render(renderer);
+  renderer.display();
 }

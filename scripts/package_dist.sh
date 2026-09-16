@@ -9,7 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
 WEB_DIR="${DIST_DIR}/web"
-ZIP_OUTPUT="${DIST_DIR}/whitehole-web.zip"
+ZIP_OUTPUT="${DIST_DIR}/supermassive-whitehole-web.zip"
+SHORT_ZIP="${DIST_DIR}/whitehole-web.zip"
 LEGACY_ZIP="${DIST_DIR}/blackhole-web.zip"
 
 COLOR_RESET="\033[0m"
@@ -25,8 +26,8 @@ if [ ! -d "${WEB_DIR}" ] || [ ! -f "${WEB_DIR}/index.html" ]; then
     exit 1
 fi
 
-# Remove old zip if present
-rm -f "${ZIP_OUTPUT}"
+# Remove old zip files if present
+rm -f "${ZIP_OUTPUT}" "${SHORT_ZIP}" "${LEGACY_ZIP}"
 
 # Check for zip utility
 if ! command -v zip &>/dev/null; then
@@ -50,9 +51,11 @@ fi
 
 ZIP_SIZE=$(stat -c%s "${ZIP_OUTPUT}" 2>/dev/null || stat -f%z "${ZIP_OUTPUT}")
 ZIP_SIZE_KB=$((ZIP_SIZE / 1024))
+cp "${ZIP_OUTPUT}" "${SHORT_ZIP}"
 cp "${ZIP_OUTPUT}" "${LEGACY_ZIP}"
 
 echo -e "${COLOR_GREEN}[SUCCESS] Created ${ZIP_OUTPUT} (${ZIP_SIZE_KB} KB)${COLOR_RESET}"
+echo -e "${COLOR_GREEN}[SUCCESS] Mirrored to ${SHORT_ZIP}${COLOR_RESET}"
 echo -e "${COLOR_GREEN}[SUCCESS] Mirrored to ${LEGACY_ZIP}${COLOR_RESET}"
 echo ""
 echo -e "${COLOR_BOLD}itch.io Upload Instructions:${COLOR_RESET}"

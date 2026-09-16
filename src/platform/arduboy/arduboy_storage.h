@@ -7,7 +7,7 @@
 //   platform. Uses AVR EEPROM for persistent high score storage.
 //
 // USAGE:
-//   Created once in blackhole.ino:
+//   Created once in supermassive-whitehole.ino:
 //     ArduboyStorage storage;
 //
 // IMPLEMENTS: All methods documented in src/hal/storage.h

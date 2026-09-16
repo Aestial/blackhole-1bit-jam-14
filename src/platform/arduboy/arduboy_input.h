@@ -8,7 +8,7 @@
 //   wraps pressed()/justPressed() calls.
 //
 // USAGE:
-//   Created once in blackhole.ino:
+//   Created once in supermassive-whitehole.ino:
 //     Arduboy2 arduboy;
 //     ArduboyInput input(arduboy);
 //

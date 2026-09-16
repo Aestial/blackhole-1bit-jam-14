@@ -14,7 +14,7 @@
 #   -b, --build-only        Compile and sync hex only, do not launch browser
 #   -p, --port <port>       Local web server port (default: 8000)
 #   -c, --clean             Clean build cache before compilation
-#   --package               Package dist/web into dist/whitehole-web.zip for itch.io
+#   --package               Package dist/web into dist/supermassive-whitehole-web.zip for itch.io
 #   -h, --help              Show this help message
 #
 # =============================================================================
@@ -61,7 +61,7 @@ Options:
   -b, --build-only        Compile and copy binaries only, skip emulator launch
   -p, --port <port>       HTTP server port (default: 8000)
   -c, --clean             Clean build directory before compiling
-  --package               Create dist/whitehole-web.zip for itch.io release
+  --package               Create dist/supermassive-whitehole-web.zip for itch.io release
   -h, --help              Show this help message
 
 Examples:
@@ -138,7 +138,7 @@ fi
 
 # 3. Compile sketch
 log_info "Compiling sketch with FQBN: ${FQBN}..."
-if ! arduino-cli compile --fqbn "${FQBN}" ./; then
+if ! arduino-cli compile --output-dir "${ROOT_DIR}/build" --fqbn "${FQBN}" ./; then
     log_error "Compilation failed!"
     exit 1
 fi
@@ -156,7 +156,7 @@ SRC_HEX="${ROOT_DIR}/build/${SKETCH_NAME}.ino.hex"
 SRC_ELF="${ROOT_DIR}/build/${SKETCH_NAME}.ino.elf"
 
 if [ ! -f "${SRC_HEX}" ]; then
-    FOUND_HEX=$(find "${ROOT_DIR}/build" -name "*.hex" 2>/dev/null | head -n 1)
+    FOUND_HEX=$(find "${ROOT_DIR}/build" -name "*.hex" ! -name "*bootloader*" 2>/dev/null | head -n 1)
     if [ -n "${FOUND_HEX}" ]; then
         SRC_HEX="${FOUND_HEX}"
     else
@@ -166,9 +166,11 @@ if [ ! -f "${SRC_HEX}" ]; then
 fi
 
 # Hardware binaries for flashing / debug
+cp "${SRC_HEX}" "${ROOT_DIR}/dist/supermassive-whitehole.hex"
 cp "${SRC_HEX}" "${ROOT_DIR}/dist/whitehole.hex"
 cp "${SRC_HEX}" "${ROOT_DIR}/dist/${SKETCH_NAME}.hex"
 if [ -f "${SRC_ELF}" ]; then
+    cp "${SRC_ELF}" "${ROOT_DIR}/dist/supermassive-whitehole.elf"
     cp "${SRC_ELF}" "${ROOT_DIR}/dist/whitehole.elf"
     cp "${SRC_ELF}" "${ROOT_DIR}/dist/${SKETCH_NAME}.elf"
 fi
@@ -181,8 +183,8 @@ if [ -d "${ROOT_DIR}/html5" ]; then
     cp "${SRC_HEX}" "${ROOT_DIR}/html5/ArduboyProject.hex"
 fi
 
-HEX_SIZE=$(stat -c%s "${ROOT_DIR}/dist/whitehole.hex" 2>/dev/null || stat -f%z "${ROOT_DIR}/dist/whitehole.hex")
-log_success "Synchronized dist/whitehole.hex (${HEX_SIZE} bytes)"
+HEX_SIZE=$(stat -c%s "${ROOT_DIR}/dist/supermassive-whitehole.hex" 2>/dev/null || stat -f%z "${ROOT_DIR}/dist/supermassive-whitehole.hex")
+log_success "Synchronized dist/supermassive-whitehole.hex (${HEX_SIZE} bytes)"
 log_success "Synchronized dist/web/ArduboyProject.hex"
 
 # 5. Packaging if requested
@@ -209,14 +211,20 @@ if [[ "${SKIN}" == "arduboy" ]]; then
     URL="http://localhost:${PORT}/?skin=arduboy"
 fi
 
-# Check if a server is already running on the target port
+# Check if a server is already running on the target port and serving properly
 SERVER_RUNNING=false
-if curl -s -I -m 1 "http://localhost:${PORT}/" &>/dev/null; then
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 1 "http://localhost:${PORT}/" 2>/dev/null || true)
+if [ "${HTTP_STATUS}" = "200" ]; then
     SERVER_RUNNING=true
     log_info "Found existing web server on port ${PORT}."
 else
+    if [ -n "${HTTP_STATUS}" ] && [ "${HTTP_STATUS}" != "000" ]; then
+        log_warn "Port ${PORT} returned HTTP ${HTTP_STATUS} (stale server). Terminating stale process..."
+        fuser -k "${PORT}/tcp" 2>/dev/null || pkill -f "http.server.*${PORT}" 2>/dev/null || true
+        sleep 0.5
+    fi
     log_info "Starting lightweight HTTP server on port ${PORT}..."
-    python3 -m http.server "${PORT}" --directory "${WEB_DIR}" &>/dev/null &
+    nohup python3 -m http.server "${PORT}" --directory "${WEB_DIR}" >/dev/null 2>&1 &
     SERVER_PID=$!
     disown "${SERVER_PID}" 2>/dev/null || true
     sleep 0.5

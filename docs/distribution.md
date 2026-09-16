@@ -10,9 +10,9 @@ The project maintains a dedicated `dist/` directory that contains only release-r
 
 ```
 dist/
-├── whitehole.hex             # Production AVR HEX file for hardware flashing
-├── whitehole.elf             # Debug symbols and memory analysis ELF binary
-├── whitehole-web.zip         # Self-contained itch.io release bundle (~476 KB)
+├── supermassive-whitehole.hex # Production AVR HEX file (also mirrored to whitehole.hex)
+├── supermassive-whitehole.elf # Debug symbols and memory analysis ELF binary
+├── supermassive-whitehole-web.zip # Self-contained itch.io release bundle (~476 KB, mirrored to whitehole-web.zip)
 ├── README.md                 # Flashing and deployment quickstart guide
 │   └── web/                      # Lean ProjectABE HTML5 emulator (~820 KB total)
 │       ├── index.html            # Clean HTML5 entry point (no external editor dependencies)
@@ -79,7 +79,7 @@ The root `./build.sh` script automates compilation, artifact synchronization, we
 ### What `build.sh` Automates
 1. Calls `arduino-cli compile --fqbn arduboy-homemade:avr:arduboy ./` to compile the C++ source.
 2. Checks exit code; fails fast with formatted error logs if compilation encounters errors.
-3. Copies `build/blackhole.ino.hex` to `dist/blackhole.hex` and `dist/web/ArduboyProject.hex`.
+3. Copies `build/supermassive-whitehole.ino.hex` to `dist/supermassive-whitehole.hex` and `dist/web/ArduboyProject.hex`.
 4. Checks if an HTTP server is already running on the requested port; if not, starts a lightweight background Python HTTP server (`python3 -m http.server <port> --directory dist/web`).
 5. Opens the browser via `xdg-open` directly to the running game.
 
@@ -88,10 +88,10 @@ The root `./build.sh` script automates compilation, artifact synchronization, we
 ## 4. itch.io Submission (1-Bit Game Jam 14)
 
 To submit the HTML5 web build:
-1. Run `./build.sh --package --build-only` to generate `dist/blackhole-web.zip`.
+1. Run `./build.sh --package --build-only` to generate `dist/supermassive-whitehole-web.zip`.
 2. On your itch.io project dashboard:
    - Set **Kind of project** to **HTML**.
-   - Upload `dist/blackhole-web.zip`.
+   - Upload `dist/supermassive-whitehole-web.zip`.
    - Check **"This file will be played in the browser"**.
    - Set viewport dimensions to **640 × 320** (for game screen mode) or **800 × 600** (if you prefer displaying the Arduboy casing).
    - Enable **Fullscreen button** and **Mobile friendly**.

@@ -7,7 +7,7 @@ We have set up an automated distribution pipeline and an optimized ProjectABE we
 ## What Was Created and Updated
 
 ### 1. Build & Emulation Automation (`build.sh`)
-- Created [build.sh](file:///home/dorito/Developer/arduboy/blackhole/build.sh) and [scripts/build_and_run.sh](file:///home/dorito/Developer/arduboy/blackhole/scripts/build_and_run.sh).
+- Created [build.sh](file:///home/dorito/Developer/arduboy/supermassive-whitehole/build.sh) and [scripts/build_and_run.sh](file:///home/dorito/Developer/arduboy/supermassive-whitehole/scripts/build_and_run.sh).
 - Single command workflow:
   - Compiles the sketch with `arduino-cli` using FQBN `arduboy-homemade:avr:arduboy`.
   - Automatically synchronizes `dist/blackhole.hex` and `dist/web/ArduboyProject.hex`.
@@ -37,8 +37,8 @@ We have set up an automated distribution pipeline and an optimized ProjectABE we
 - **Dynamic Toggle**: Press <kbd>F3</kbd> in-browser at any time to switch skins.
 
 ### 4. Release Packaging & Documentation
-- Created [scripts/package_dist.sh](file:///home/dorito/Developer/arduboy/blackhole/scripts/package_dist.sh) to build `dist/blackhole-web.zip` for itch.io 1-Bit Game Jam uploads.
-- Created [dist/README.md](file:///home/dorito/Developer/arduboy/blackhole/dist/README.md) and [docs/distribution.md](file:///home/dorito/Developer/arduboy/blackhole/docs/distribution.md).
+- Created [scripts/package_dist.sh](file:///home/dorito/Developer/arduboy/supermassive-whitehole/scripts/package_dist.sh) to build `dist/blackhole-web.zip` for itch.io 1-Bit Game Jam uploads.
+- Created [dist/README.md](file:///home/dorito/Developer/arduboy/supermassive-whitehole/dist/README.md) and [docs/distribution.md](file:///home/dorito/Developer/arduboy/supermassive-whitehole/docs/distribution.md).
 
 ---
 

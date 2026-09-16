@@ -173,32 +173,32 @@ Comprehensive gitignore covering Arduino build artifacts, PlatformIO, IDE files,
 
 ### Game Logic Component
 
-#### [NEW] [`src/game/config.h`](file:///home/dorito/Developer/arduboy/blackhole/src/game/config.h)
+#### [NEW] [`src/game/config.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/config.h)
 Game-wide constants: screen dimensions, physics tuning, entity limits, fixed-point helpers.
 
-#### [NEW] [`src/game/entity.h`](file:///home/dorito/Developer/arduboy/blackhole/src/game/entity.h) / [`entity.cpp`](file:///home/dorito/Developer/arduboy/blackhole/src/game/entity.cpp)
+#### [NEW] [`src/game/entity.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/entity.h) / [`entity.cpp`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/entity.cpp)
 - `EntityType` enum: `FOOD_BURGER`, `FOOD_PIZZA`, `FOOD_DONUT`, `COLLECTIBLE`, `BLACKHOLE`
 - `Entity` struct: position (fixed-point), velocity, type, active flag, size
 - `EntityManager`: static array of entities, spawn/despawn, iteration
 
-#### [NEW] [`src/game/player.h`](file:///home/dorito/Developer/arduboy/blackhole/src/game/player.h) / [`player.cpp`](file:///home/dorito/Developer/arduboy/blackhole/src/game/player.cpp)
+#### [NEW] [`src/game/player.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/player.h) / [`player.cpp`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/player.cpp)
 - Position, velocity (fixed-point x,y)
 - Facing direction (8-dir enum or angle)
 - `update(inputState)`: apply acceleration/friction based on input
 - `getHitbox()`: for collision
 
-#### [NEW] [`src/game/physics.h`](file:///home/dorito/Developer/arduboy/blackhole/src/game/physics.h) / [`physics.cpp`](file:///home/dorito/Developer/arduboy/blackhole/src/game/physics.cpp)
+#### [NEW] [`src/game/physics.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/physics.h) / [`physics.cpp`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/physics.cpp)
 - AABB collision detection between player and entities
 - Blackhole gravitational pull calculation (vector toward player)
 - Boundary-free movement (infinite plane)
 
-#### [NEW] [`src/game/world.h`](file:///home/dorito/Developer/arduboy/blackhole/src/game/world.h) / [`world.cpp`](file:///home/dorito/Developer/arduboy/blackhole/src/game/world.cpp)
+#### [NEW] [`src/game/world.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/world.h) / [`world.cpp`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/world.cpp)
 - Camera position (follows player)
 - Entity spawning logic (spawn ahead of player, cull behind)
 - Difficulty ramping (increase spawn rate, blackhole speed over time)
 - Scrolling background grid
 
-#### [NEW] [`src/game/game.h`](file:///home/dorito/Developer/arduboy/blackhole/src/game/game.h) / [`game.cpp`](file:///home/dorito/Developer/arduboy/blackhole/src/game/game.cpp)
+#### [NEW] [`src/game/game.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/game.h) / [`game.cpp`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/game/game.cpp)
 - `GameState` enum: `TITLE`, `PLAYING`, `GAME_OVER`
 - `Game` class: owns Player, World, EntityManager
 - `update()`: state machine dispatch → input → physics → spawn → collision → render
@@ -208,7 +208,7 @@ Game-wide constants: screen dimensions, physics tuning, entity limits, fixed-poi
 
 ### HAL Interface Component
 
-#### [NEW] [`src/hal/renderer.h`](file:///home/dorito/Developer/arduboy/blackhole/src/hal/renderer.h)
+#### [NEW] [`src/hal/renderer.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/hal/renderer.h)
 ```cpp
 struct IRenderer {
     void clear();
@@ -225,7 +225,7 @@ struct IRenderer {
 ```
 > Not `virtual` — implemented via compile-time template parameter or `#ifdef` platform switch.
 
-#### [NEW] [`src/hal/input.h`](file:///home/dorito/Developer/arduboy/blackhole/src/hal/input.h)
+#### [NEW] [`src/hal/input.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/hal/input.h)
 ```cpp
 enum Button { BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT, BTN_A, BTN_B };
 struct IInput {
@@ -235,10 +235,10 @@ struct IInput {
 };
 ```
 
-#### [NEW] [`src/hal/audio.h`](file:///home/dorito/Developer/arduboy/blackhole/src/hal/audio.h)
+#### [NEW] [`src/hal/audio.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/hal/audio.h)
 Stub interface for future sound effects.
 
-#### [NEW] [`src/hal/storage.h`](file:///home/dorito/Developer/arduboy/blackhole/src/hal/storage.h)
+#### [NEW] [`src/hal/storage.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/src/hal/storage.h)
 ```cpp
 struct IStorage {
     void saveHighScore(uint16_t score);
@@ -266,7 +266,7 @@ Wraps `EEPROM.put()` / `EEPROM.get()` for high score persistence.
 
 ### Assets Component
 
-#### [NEW] [`assets/sprites.h`](file:///home/dorito/Developer/arduboy/blackhole/assets/sprites.h)
+#### [NEW] [`assets/sprites.h`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/assets/sprites.h)
 Placeholder sprite definitions as PROGMEM byte arrays — basic geometric shapes:
 - **Player (fat man)**: Large filled circle (~10×10 px)
 - **Food items**: Triangle (pizza), square (burger), small circle (donut)
@@ -277,7 +277,7 @@ Placeholder sprite definitions as PROGMEM byte arrays — basic geometric shapes
 
 ### Entry Point
 
-#### [MODIFY] [`blackhole.ino`](file:///home/dorito/Developer/arduboy/blackhole/blackhole.ino)
+#### [MODIFY] [`blackhole.ino`](file:///home/dorito/Developer/arduboy/supermassive-whitehole/blackhole.ino)
 Wire everything together:
 ```cpp
 #include <Arduboy2.h>

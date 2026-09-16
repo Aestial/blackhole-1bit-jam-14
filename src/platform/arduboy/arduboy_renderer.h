@@ -7,7 +7,7 @@
 //   platform. Wraps Arduboy2 library draw calls.
 //
 // USAGE:
-//   Created once in blackhole.ino with a reference to the Arduboy2 instance:
+//   Created once in supermassive-whitehole.ino with a reference to the Arduboy2 instance:
 //     Arduboy2 arduboy;
 //     ArduboyRenderer renderer(arduboy);
 //

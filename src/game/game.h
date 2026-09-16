@@ -72,7 +72,7 @@ enum GameState : uint8_t {
 // Game — The central game class
 // =============================================================================
 // Size: Player (~30) + World (~50) + EntityManager (~168) + misc (~10) ≈ 258 bytes
-// One instance, created globally in blackhole.ino.
+// One instance, created globally in supermassive-whitehole.ino.
 
 class Game {
 public:

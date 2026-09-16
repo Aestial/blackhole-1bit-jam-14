@@ -6,7 +6,7 @@ This project uses a **layered architecture** that separates game logic from plat
 
 ```
 ┌─────────────────────────────────────────┐
-│  blackhole.ino (Entry Point)            │  ← Wires HAL to Game
+│  supermassive-whitehole.ino (Entry Point)            │  ← Wires HAL to Game
 ├─────────────────────────────────────────┤
 │  src/game/  (Game Logic — Pure C++)     │  ← Platform-independent
 │    config.h, player.h/cpp, entity.h/cpp │
@@ -100,7 +100,7 @@ In `config.h`, change:
 ```
 
 ### Step 5: Create Entry Point
-Replace `blackhole.ino` with a `main.cpp`:
+Replace `supermassive-whitehole.ino` with a `main.cpp`:
 ```cpp
 #include "src/game/game.h"
 int main() {
