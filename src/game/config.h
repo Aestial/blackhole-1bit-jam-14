@@ -286,17 +286,44 @@ static const uint16_t EEPROM_HIGH_SCORE_ADDR = 16;
 // =============================================================================
 // PERSPECTIVE GROUND PLANE
 // =============================================================================
-// Parameters for the pseudo-3D perspective ground grid:
-// - Horizon line Y: separates celestial sky void from the ground plane
-// - Ground depth Z at player: depth corresponding to screen center Y = 32
-// - Spacing of perspective rays and depth lines
-static const int16_t HORIZON_Y            = 14;  // Horizon line Y coordinate
-static const int16_t GROUND_DEPTH_PLAYER  = 72;  // Depth Z at player (screen Y = 32)
-static const int16_t BASE_SPACING_X       = 24;  // Ray spacing at screen bottom
-static const int16_t TOP_SPACING_X        = 6;   // Ray spacing at horizon line
-static const int16_t Z_PERIOD             = 24;  // Depth line period
+// Pseudo-3D ground grid with quadratic depth foreshortening.
+// The vanishing point (HORIZON_Y) is placed ABOVE the screen top for a
+// dramatic perspective where the full 128×64 display is ground plane.
+// Objects recede toward the top of the screen and naturally scroll off —
+// no visible horizon line means nothing can "fly above" it.
+//
+// CUSTOMIZATION GUIDE (adjust these to change the camera angle):
+//   HORIZON_Y:  Lower = more dramatic convergence. 0 = horizon at screen top.
+//               Negative = vanishing point above screen (recommended: -10 to -20).
+//               Positive = visible horizon line on screen.
+//   GROUND_DEPTH_PLAYER: Player's Z-depth on the plane. Controls vertical
+//               position on screen. Higher = player renders lower.
+//   PERSPECTIVE_MAX_Z: Z-depth at screen bottom edge. Controls the depth range.
+//   BASE_SPACING_X / TOP_SPACING_X: Control perspective ray convergence.
+//               Ratio TOP/BASE determines how much rays converge at the vanishing point.
+//   Z_PERIOD: Distance between horizontal depth lines. Smaller = more lines visible.
+static const int16_t HORIZON_Y              = -10;    // Vanishing point Y (off-screen top)
+static const int16_t GROUND_HEIGHT          = 74;     // SCREEN_H - HORIZON_Y (ground span px)
+static const int16_t GROUND_DEPTH_PLAYER    = 91;     // Player Z-depth (screen Y ≈ 32)
+static const int16_t PERSPECTIVE_MAX_Z      = 120;    // Z at screen bottom edge
+static const int32_t PERSPECTIVE_MAX_Z_SQ   = 14400;  // PERSPECTIVE_MAX_Z^2 (precomputed)
+static const int16_t BASE_SPACING_X         = 24;     // Ray spacing at screen bottom
+static const int16_t TOP_SPACING_X          = 6;      // Ray spacing at vanishing point
+static const int16_t Z_PERIOD               = 24;     // Depth line period
 
-static const uint8_t GRID_SPACING         = 16;  // Pixels between grid lines
+// =============================================================================
+// HUD POSITION
+// =============================================================================
+// Configurable position for the score / HUD overlay.
+// A black background rectangle is drawn behind the text for readability
+// over the grid lines (since there is no open sky area).
+enum HudPosition : uint8_t {
+    HUD_TOP_RIGHT    = 0,
+    HUD_TOP_LEFT     = 1,
+    HUD_BOTTOM_RIGHT = 2,
+    HUD_BOTTOM_LEFT  = 3
+};
+static const HudPosition HUD_POSITION = HUD_TOP_RIGHT;
 
 // =============================================================================
 // COLORS (1-bit: 0=BLACK, 1=WHITE)

@@ -240,19 +240,19 @@ void Game::renderGameOver(HalRenderer& renderer) {
 
 void Game::renderBackground(HalRenderer& renderer) {
     // =========================================================================
-    // Milestone 1 (M1): Clean Pseudo-3D Perspective Ground Grid
+    // Pseudo-3D Perspective Ground Grid (Full-Screen, No Visible Horizon)
     // =========================================================================
-    // Renders an infinite perspective grid with a clean horizon at y = 14:
-    // - Above horizon (y < 14): Open celestial void (clean space for HUD/score).
-    // - Horizon line drawn at y = 14.
-    // - Perspective rays radiate outward from horizon to screen bottom, scrolling with camX.
-    // - Horizontal depth lines are geometrically foreshortened (quadratic scale),
-    //   scrolling smoothly with camY.
+    // The vanishing point (HORIZON_Y) is above the screen, so the entire
+    // 128×64 display is ground plane. Perspective rays converge toward the
+    // off-screen vanishing point, and depth lines use quadratic foreshortening.
+    // Objects naturally recede toward the top of the screen and scroll off.
 
-    // 1. Horizon Line
-    renderer.drawLine(0, HORIZON_Y, SCREEN_W - 1, HORIZON_Y, COLOR_WHITE);
+    // 1. Horizon line (only drawn if vanishing point is on-screen)
+    if (HORIZON_Y >= 0) {
+        renderer.drawLine(0, HORIZON_Y, SCREEN_W - 1, HORIZON_Y, COLOR_WHITE);
+    }
 
-    // 2. Perspective Rays (scrolling with camX)
+    // 2. Perspective rays converging toward vanishing point (scrolling with camX)
     int16_t camX_int = (int16_t)FP32_TO_INT(world.camX);
     int16_t xOffset = camX_int % BASE_SPACING_X;
     if (xOffset < 0) xOffset += BASE_SPACING_X;
@@ -262,16 +262,15 @@ void Game::renderBackground(HalRenderer& renderer) {
         renderer.drawLine(tx, HORIZON_Y, bx, SCREEN_H - 1, COLOR_WHITE);
     }
 
-    // 3. Geometrically foreshortened depth lines (scrolling smoothly with camY)
+    // 3. Quadratic foreshortened depth lines (scrolling with camY)
     int16_t camY_int = (int16_t)FP32_TO_INT(world.camY);
     int16_t zOffset = camY_int % Z_PERIOD;
     if (zOffset < 0) zOffset += Z_PERIOD;
 
-    // Ground height: 64 - 14 = 50px. Quadratic curve: y = HORIZON_Y + (50 * z^2) / 14400
-    for (int16_t z = Z_PERIOD - zOffset; z <= 120; z += Z_PERIOD) {
+    for (int16_t z = Z_PERIOD - zOffset; z <= PERSPECTIVE_MAX_Z; z += Z_PERIOD) {
         int32_t z32 = z;
-        int16_t yLine = HORIZON_Y + (int16_t)((50 * z32 * z32) / 14400);
-        if (yLine > HORIZON_Y && yLine < SCREEN_H) {
+        int16_t yLine = HORIZON_Y + (int16_t)(((int32_t)GROUND_HEIGHT * z32 * z32) / PERSPECTIVE_MAX_Z_SQ);
+        if (yLine > 0 && yLine < SCREEN_H) {
             renderer.drawLine(0, yLine, SCREEN_W - 1, yLine, COLOR_WHITE);
         }
     }
@@ -286,9 +285,9 @@ void Game::renderEntities(HalRenderer& renderer) {
         int16_t sx = world.worldToScreenX(e.x, e.y);
         int16_t sy = world.worldToScreenY(e.y);
 
-        // Skip if completely off-screen or far beyond horizon
+        // Skip if completely off-screen
         if (sx < -ITEM_SPRITE_WIDTH || sx > SCREEN_W + ITEM_SPRITE_WIDTH ||
-            sy < HORIZON_Y - ITEM_SPRITE_HEIGHT || sy > SCREEN_H + ITEM_SPRITE_HEIGHT) {
+            sy < -ITEM_SPRITE_HEIGHT || sy > SCREEN_H + ITEM_SPRITE_HEIGHT) {
             continue;
         }
 
@@ -337,9 +336,9 @@ void Game::renderBlackhole(HalRenderer& renderer) {
     int16_t sx = world.worldToScreenX(world.bhX, world.bhY);
     int16_t sy = world.worldToScreenY(world.bhY);
 
-    // Skip drawing if completely off-screen or far beyond horizon
+    // Skip drawing if completely off-screen
     if (sx < -WHITEHOLE_SPRITE_WIDTH || sx > SCREEN_W + WHITEHOLE_SPRITE_WIDTH ||
-        sy < HORIZON_Y - WHITEHOLE_SPRITE_HEIGHT || sy > SCREEN_H + WHITEHOLE_SPRITE_HEIGHT) {
+        sy < -WHITEHOLE_SPRITE_HEIGHT || sy > SCREEN_H + WHITEHOLE_SPRITE_HEIGHT) {
         return;
     }
 
@@ -351,15 +350,27 @@ void Game::renderBlackhole(HalRenderer& renderer) {
 }
 
 void Game::renderHUD(HalRenderer& renderer) {
-    // TODO(M4): Clean HUD with background bar for readability
-    //
-    // Score in top-right:
-    //   renderer.fillRect(SCREEN_W - 42, 0, 42, 9, COLOR_BLACK); // background
-    //   renderer.setCursor(SCREEN_W - 40, 1);
-    //   renderer.printNumber(score);
+    // Configurable HUD position with black backing for readability over grid
+    static const uint8_t HUD_PAD   = 2;    // Padding from screen edge
+    static const uint8_t HUD_BG_W  = 40;   // Background width (covers ~5 digits)
+    static const uint8_t HUD_BG_H  = 12;   // Background height (font 8px + 4px padding)
 
-    // STUB: Score in top-right, no background
-    renderer.setCursor(SCREEN_W - 36, 0);
+    int16_t hudX, hudY;
+    switch (HUD_POSITION) {
+        case HUD_TOP_LEFT:     hudX = HUD_PAD;                        hudY = HUD_PAD; break;
+        case HUD_BOTTOM_LEFT:  hudX = HUD_PAD;                        hudY = SCREEN_H - HUD_BG_H - HUD_PAD + 1; break;
+        case HUD_BOTTOM_RIGHT: hudX = SCREEN_W - HUD_BG_W - HUD_PAD;  hudY = SCREEN_H - HUD_BG_H - HUD_PAD + 1; break;
+        case HUD_TOP_RIGHT:
+        default:               hudX = SCREEN_W - HUD_BG_W - HUD_PAD;  hudY = HUD_PAD; break;
+    }
+
+    // Black background rectangle for readability over grid lines
+    renderer.fillRect(hudX, hudY, HUD_BG_W, HUD_BG_H, COLOR_BLACK);
+    // White border line outline
+    renderer.drawRect(hudX, hudY, HUD_BG_W, HUD_BG_H, COLOR_WHITE);
+    
+    // Draw score text centered vertically within the box
+    renderer.setCursor(hudX + 3, hudY + 2);
     renderer.printNumber(score);
 }
 

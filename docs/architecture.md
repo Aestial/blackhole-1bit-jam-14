@@ -152,7 +152,7 @@ arduino-cli upload --fqbn arduboy:avr:arduboy --port /dev/ttyACM0 ./
 | Milestone | Status | Files Modified | Description |
 |-----------|--------|----------------|-------------|
 | **M0** | ✅ Complete | Full tree | Project scaffold, architecture, HAL interfaces, game state machine |
-| **M1** | ✅ Complete | `player.cpp`, `game.cpp`, `config.h` | Hybrid inertia physics with velocity blending, 8-dir normalization, braking, and pseudo-3D perspective ground grid |
+| **M1** | ✅ Complete | `player.cpp`, `game.cpp`, `config.h`, `world.cpp` | Hybrid inertia physics, full-screen pseudo-3D ground grid (vanishing point above screen, no visible horizon), configurable HUD position |
 | **M2** | 📋 Planned | `game.cpp`, `world.cpp` | Entity spawning (random type+position), collision responses, despawning, `renderEntities()` |
 | **M3** | 📋 Planned | `game.cpp` | Enable blackhole gravity loop, `renderBlackhole()` with concentric rings + spin |
 | **M4** | 📋 Planned | `game.cpp` | Polish `renderTitle()`, `renderGameOver()`, `renderHUD()`, converging grid distortion |

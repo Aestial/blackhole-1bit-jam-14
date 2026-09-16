@@ -45,8 +45,9 @@ The blackhole tracks the player's position at a speed that linearly increases ov
 
 ### Infinite Plane
 - Camera follows player
-- Pseudo-3D perspective ground grid scrolling seamlessly in all 8 directions
-- Clear horizon line (y=14) separating upper celestial void from the scrolling ground plane
+- Pseudo-3D perspective ground grid fills the entire 128×64 screen
+- Vanishing point placed above the screen (y=-10) for dramatic perspective convergence
+- No visible horizon line — objects recede toward the top of the screen and scroll off naturally
 - Entities spawn around the player, despawn when far off-screen
 
 ---
