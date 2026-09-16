@@ -19,10 +19,15 @@ build/
 # -----------------------------------------------------------------------------
 # Distribution binaries (compiled .hex for flashing)
 # -----------------------------------------------------------------------------
-dist/
+dist/*.hex
+dist/*.elf
+dist/*.bin
+dist/*.eep
+dist/*.zip
+dist/web/*.hex
 
 # -----------------------------------------------------------------------------
-# Web / HTML5 builds (e.g., ProjectABE emulator exports)
+# Upstream ProjectABE reference directory
 # -----------------------------------------------------------------------------
 html5/
 
