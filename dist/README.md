@@ -1,6 +1,6 @@
-# Supermassive Blackhole — Distribution & Release Artifacts
+# Supermassive Whitehole — Distribution & Release Artifacts
 
-This directory contains release binaries and web emulation packages for **Supermassive Blackhole** (1-Bit Game Jam 14).
+This directory contains release binaries and web emulation packages for **Supermassive Whitehole** (1-Bit Game Jam 14).
 
 ---
 
@@ -8,9 +8,9 @@ This directory contains release binaries and web emulation packages for **Superm
 
 | File / Folder | Purpose |
 |---|---|
-| `blackhole.hex` | Production Intel HEX binary for flashing to physical Arduboy hardware |
-| `blackhole.elf` | ELF binary with debug symbols (for disassembly, stack analysis, memory inspection) |
-| `blackhole-web.zip` | Self-contained HTML5 web player package ready for 1-click upload to [itch.io](https://itch.io) |
+| `whitehole.hex` | Production Intel HEX binary for flashing to physical Arduboy hardware |
+| `whitehole.elf` | ELF binary with debug symbols (for disassembly, stack analysis, memory inspection) |
+| `whitehole-web.zip` | Self-contained HTML5 web player package ready for 1-click upload to [itch.io](https://itch.io) |
 | `web/` | Minimal, optimized ProjectABE HTML5 web emulator directory (only essential assets, ~820 KB) |
 
 ---
@@ -24,11 +24,11 @@ Connect the Arduboy via micro-USB and run:
 arduino-cli board list
 
 # Flash binary
-arduino-cli upload -p /dev/ttyACM0 --fqbn arduboy-homemade:avr:arduboy --input-file dist/blackhole.hex
+arduino-cli upload -p /dev/ttyACM0 --fqbn arduboy-homemade:avr:arduboy --input-file dist/whitehole.hex
 ```
 
 ### Option B: Using Arduboy Quick Flasher / Web Flashers
-Open any browser-based Arduboy uploader (e.g., WebUSB Arduboy flasher) and drag-and-drop `dist/blackhole.hex`.
+Open any browser-based Arduboy uploader (e.g., WebUSB Arduboy flasher) and drag-and-drop `dist/whitehole.hex`.
 
 ---
 
@@ -36,7 +36,7 @@ Open any browser-based Arduboy uploader (e.g., WebUSB Arduboy flasher) and drag-
 
 1. Navigate to your project on **itch.io** and click **Edit game**.
 2. Under **Kind of project**, select **HTML** (*You have a ZIP or HTML file that will be played in the browser*).
-3. In the **Uploads** section, upload `dist/blackhole-web.zip`.
+3. In the **Uploads** section, upload `dist/whitehole-web.zip`.
 4. Check the box: **"This file will be played in the browser"**.
 5. Recommended Embed Options:
    - **Viewport dimensions**: `640` × `320` (or `800` × `600` if using Arduboy casing)

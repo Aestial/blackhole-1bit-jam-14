@@ -94,6 +94,16 @@ struct ArduboyRenderer {
     void printNumber(int32_t number) {
         hw.print(number);
     }
+
+    // Draw sprite using Sprites::drawSelfMasked (1s are white, 0s are transparent)
+    void drawSelfMasked(int16_t x, int16_t y, const uint8_t* bitmap, uint8_t frame) {
+        Sprites::drawSelfMasked(x, y, bitmap, frame);
+    }
+
+    // Draw sprite using Sprites::drawOverwrite (replaces buffer completely)
+    void drawOverwrite(int16_t x, int16_t y, const uint8_t* bitmap, uint8_t frame) {
+        Sprites::drawOverwrite(x, y, bitmap, frame);
+    }
 };
 
 #endif // ARDUBOY_RENDERER_H

@@ -1,6 +1,6 @@
 # Distribution & Emulation Guide
 
-This document describes the distribution architecture, automated build pipeline, and ProjectABE web emulator optimization for **Supermassive Blackhole** (1-Bit Game Jam 14).
+This document describes the distribution architecture, automated build pipeline, and ProjectABE web emulator optimization for **Supermassive Whitehole** (1-Bit Game Jam 14).
 
 ---
 
@@ -9,12 +9,11 @@ This document describes the distribution architecture, automated build pipeline,
 The project maintains a dedicated `dist/` directory that contains only release-ready binaries and the optimized web emulator:
 
 ```
-blackhole/
-├── dist/
-│   ├── blackhole.hex             # Production AVR HEX file for hardware flashing
-│   ├── blackhole.elf             # Debug symbols and memory analysis ELF binary
-│   ├── blackhole-web.zip         # Self-contained itch.io release bundle (~470 KB)
-│   ├── README.md                 # Flashing and deployment quickstart guide
+dist/
+├── whitehole.hex             # Production AVR HEX file for hardware flashing
+├── whitehole.elf             # Debug symbols and memory analysis ELF binary
+├── whitehole-web.zip         # Self-contained itch.io release bundle (~476 KB)
+├── README.md                 # Flashing and deployment quickstart guide
 │   └── web/                      # Lean ProjectABE HTML5 emulator (~820 KB total)
 │       ├── index.html            # Clean HTML5 entry point (no external editor dependencies)
 │       ├── app.js                # Core emulator engine (autorun & dual-skin enabled)

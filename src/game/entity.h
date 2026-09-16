@@ -54,11 +54,12 @@
 // The uint8_t underlying type keeps each entity small.
 
 enum EntityType : uint8_t {
-    ENTITY_NONE        = 0,  // Inactive / empty slot — available for reuse
-    ENTITY_FOOD_PIZZA  = 1,  // Triangle shape. Slow: 30 frames, -15% speed
-    ENTITY_FOOD_BURGER = 2,  // Square shape.   Slow: 60 frames, -30% speed
-    ENTITY_FOOD_DONUT  = 3,  // Circle shape.   Slow: 90 frames, -50% speed
-    ENTITY_COLLECTIBLE = 4   // Diamond shape.  Score: +SCORE_PER_COLLECTIBLE
+    ENTITY_NONE          = 0,  // Inactive / empty slot — available for reuse
+    ENTITY_FOOD_PIZZA    = 1,  // Triangle shape. Slow: 30 frames, -15% speed
+    ENTITY_FOOD_BURGER   = 2,  // Square shape.   Slow: 60 frames, -30% speed
+    ENTITY_FOOD_DONUT    = 3,  // Circle shape.   Slow: 90 frames, -50% speed
+    ENTITY_COLLECTIBLE   = 4,  // Diamond shape.  Score: +SCORE_PER_COLLECTIBLE
+    ENTITY_FOOD_ICECREAM = 5   // Cone shape.     Slow: 120 frames, -60% speed (Brain freeze!)
 };
 
 // =============================================================================

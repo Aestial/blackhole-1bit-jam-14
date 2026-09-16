@@ -9,7 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
 WEB_DIR="${DIST_DIR}/web"
-ZIP_OUTPUT="${DIST_DIR}/blackhole-web.zip"
+ZIP_OUTPUT="${DIST_DIR}/whitehole-web.zip"
+LEGACY_ZIP="${DIST_DIR}/blackhole-web.zip"
 
 COLOR_RESET="\033[0m"
 COLOR_BOLD="\033[1m"
@@ -49,8 +50,10 @@ fi
 
 ZIP_SIZE=$(stat -c%s "${ZIP_OUTPUT}" 2>/dev/null || stat -f%z "${ZIP_OUTPUT}")
 ZIP_SIZE_KB=$((ZIP_SIZE / 1024))
+cp "${ZIP_OUTPUT}" "${LEGACY_ZIP}"
 
 echo -e "${COLOR_GREEN}[SUCCESS] Created ${ZIP_OUTPUT} (${ZIP_SIZE_KB} KB)${COLOR_RESET}"
+echo -e "${COLOR_GREEN}[SUCCESS] Mirrored to ${LEGACY_ZIP}${COLOR_RESET}"
 echo ""
 echo -e "${COLOR_BOLD}itch.io Upload Instructions:${COLOR_RESET}"
 echo -e "  1. Go to your game edit page on itch.io (e.g. 1-Bit Game Jam 14 submission)."

@@ -14,7 +14,7 @@
 #   -b, --build-only        Compile and sync hex only, do not launch browser
 #   -p, --port <port>       Local web server port (default: 8000)
 #   -c, --clean             Clean build cache before compilation
-#   --package               Package dist/web into dist/blackhole-web.zip for itch.io
+#   --package               Package dist/web into dist/whitehole-web.zip for itch.io
 #   -h, --help              Show this help message
 #
 # =============================================================================
@@ -52,7 +52,7 @@ show_help() {
     cat << EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Automated build and emulation script for Supermassive Blackhole (Arduboy).
+Automated build and emulation script for Supermassive Whitehole (Arduboy).
 
 Options:
   --skin <bare|arduboy>   Emulator skin mode:
@@ -61,7 +61,7 @@ Options:
   -b, --build-only        Compile and copy binaries only, skip emulator launch
   -p, --port <port>       HTTP server port (default: 8000)
   -c, --clean             Clean build directory before compiling
-  --package               Create dist/blackhole-web.zip for itch.io release
+  --package               Create dist/whitehole-web.zip for itch.io release
   -h, --help              Show this help message
 
 Examples:
@@ -121,7 +121,7 @@ if [[ "${SKIN}" != "bare" && "${SKIN}" != "arduboy" ]]; then
 fi
 
 echo -e "${COLOR_BOLD}======================================================${COLOR_RESET}"
-echo -e "${COLOR_BOLD}   Supermassive Blackhole — Arduboy Build Pipeline    ${COLOR_RESET}"
+echo -e "${COLOR_BOLD}   Supermassive Whitehole — Arduboy Build Pipeline    ${COLOR_RESET}"
 echo -e "${COLOR_BOLD}======================================================${COLOR_RESET}"
 
 # 1. Clean if requested
@@ -148,18 +148,29 @@ log_success "Compilation succeeded!"
 log_info "Synchronizing distribution artifacts..."
 mkdir -p "${ROOT_DIR}/dist/web"
 
-SRC_HEX="${ROOT_DIR}/build/blackhole.ino.hex"
-SRC_ELF="${ROOT_DIR}/build/blackhole.ino.elf"
+# Dynamically discover sketch name from .ino in root
+INO_FILE=$(ls -1 "${ROOT_DIR}"/*.ino 2>/dev/null | head -n 1)
+SKETCH_NAME=$(basename "${INO_FILE}" .ino)
+
+SRC_HEX="${ROOT_DIR}/build/${SKETCH_NAME}.ino.hex"
+SRC_ELF="${ROOT_DIR}/build/${SKETCH_NAME}.ino.elf"
 
 if [ ! -f "${SRC_HEX}" ]; then
-    log_error "Built hex file not found at ${SRC_HEX}"
-    exit 1
+    FOUND_HEX=$(find "${ROOT_DIR}/build" -name "*.hex" 2>/dev/null | head -n 1)
+    if [ -n "${FOUND_HEX}" ]; then
+        SRC_HEX="${FOUND_HEX}"
+    else
+        log_error "Built hex file not found in ${ROOT_DIR}/build"
+        exit 1
+    fi
 fi
 
 # Hardware binaries for flashing / debug
-cp "${SRC_HEX}" "${ROOT_DIR}/dist/blackhole.hex"
+cp "${SRC_HEX}" "${ROOT_DIR}/dist/whitehole.hex"
+cp "${SRC_HEX}" "${ROOT_DIR}/dist/${SKETCH_NAME}.hex"
 if [ -f "${SRC_ELF}" ]; then
-    cp "${SRC_ELF}" "${ROOT_DIR}/dist/blackhole.elf"
+    cp "${SRC_ELF}" "${ROOT_DIR}/dist/whitehole.elf"
+    cp "${SRC_ELF}" "${ROOT_DIR}/dist/${SKETCH_NAME}.elf"
 fi
 
 # Web emulator binaries
@@ -170,8 +181,8 @@ if [ -d "${ROOT_DIR}/html5" ]; then
     cp "${SRC_HEX}" "${ROOT_DIR}/html5/ArduboyProject.hex"
 fi
 
-HEX_SIZE=$(stat -c%s "${ROOT_DIR}/dist/blackhole.hex" 2>/dev/null || stat -f%z "${ROOT_DIR}/dist/blackhole.hex")
-log_success "Synchronized dist/blackhole.hex (${HEX_SIZE} bytes)"
+HEX_SIZE=$(stat -c%s "${ROOT_DIR}/dist/whitehole.hex" 2>/dev/null || stat -f%z "${ROOT_DIR}/dist/whitehole.hex")
+log_success "Synchronized dist/whitehole.hex (${HEX_SIZE} bytes)"
 log_success "Synchronized dist/web/ArduboyProject.hex"
 
 # 5. Packaging if requested

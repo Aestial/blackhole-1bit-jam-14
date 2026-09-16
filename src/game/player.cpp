@@ -113,6 +113,10 @@ void Player::applyFoodSlow(EntityType foodType) {
             slowTimer = FOOD_DONUT_SLOW_DURATION;
             slowIntensity = FOOD_DONUT_SLOW_INTENSITY;
             break;
+        case ENTITY_FOOD_ICECREAM:
+            slowTimer = FOOD_ICECREAM_SLOW_DURATION;
+            slowIntensity = FOOD_ICECREAM_SLOW_INTENSITY;
+            break;
         default:
             // Not a food type — do nothing
             break;

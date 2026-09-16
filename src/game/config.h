@@ -167,7 +167,8 @@ static const uint8_t MAX_ENTITIES = 12;
 static const uint8_t FOOD_PIZZA_SIZE      = 6;   // Rendered as triangle
 static const uint8_t FOOD_BURGER_SIZE     = 6;   // Rendered as filled square
 static const uint8_t FOOD_DONUT_SIZE      = 4;   // Rendered as small circle
-static const uint8_t COLLECTIBLE_SIZE     = 4;   // Rendered as diamond (rotated square)
+static const uint8_t FOOD_ICECREAM_SIZE   = 6;   // Rendered as ice cream cone
+static const uint8_t COLLECTIBLE_SIZE     = 4;   // Rendered as diamond / gem
 
 // =============================================================================
 // FOOD SLOWDOWN CONSTANTS
@@ -180,18 +181,22 @@ static const uint8_t COLLECTIBLE_SIZE     = 4;   // Rendered as diamond (rotated
 //   100 = full stop (don't use — feels unfair)
 //
 // Design intent:
-//   Pizza  = light snack, barely slows you
-//   Burger = heavier meal, noticeable
-//   Donut  = irresistible, significant slow
+//   Pizza    = light snack, barely slows you
+//   Burger   = heavier meal, noticeable
+//   Donut    = irresistible, significant slow
+//   IceCream = brain freeze, heavy slow
 
-static const uint8_t FOOD_PIZZA_SLOW_DURATION   = 30;   // ~0.5 sec
-static const uint8_t FOOD_PIZZA_SLOW_INTENSITY   = 15;   // -15% speed
+static const uint8_t FOOD_PIZZA_SLOW_DURATION    = 30;   // ~0.5 sec
+static const uint8_t FOOD_PIZZA_SLOW_INTENSITY    = 15;   // -15% speed
 
-static const uint8_t FOOD_BURGER_SLOW_DURATION  = 60;   // ~1.0 sec
-static const uint8_t FOOD_BURGER_SLOW_INTENSITY  = 30;   // -30% speed
+static const uint8_t FOOD_BURGER_SLOW_DURATION   = 60;   // ~1.0 sec
+static const uint8_t FOOD_BURGER_SLOW_INTENSITY   = 30;   // -30% speed
 
-static const uint8_t FOOD_DONUT_SLOW_DURATION   = 90;   // ~1.5 sec
-static const uint8_t FOOD_DONUT_SLOW_INTENSITY   = 50;   // -50% speed
+static const uint8_t FOOD_DONUT_SLOW_DURATION    = 90;   // ~1.5 sec
+static const uint8_t FOOD_DONUT_SLOW_INTENSITY    = 50;   // -50% speed
+
+static const uint8_t FOOD_ICECREAM_SLOW_DURATION = 120;  // ~2.0 sec (Brain freeze!)
+static const uint8_t FOOD_ICECREAM_SLOW_INTENSITY = 60;  // -60% speed
 
 // =============================================================================
 // BLACKHOLE CONSTANTS

@@ -99,6 +99,13 @@
 //     Print an integer as text at the current cursor position.
 //     Used for: score display, high score.
 //
+//   void drawSelfMasked(int16_t x, int16_t y, const uint8_t* bitmap, uint8_t frame);
+//     Draw a sprite frame where 1 bits are drawn as WHITE and 0 bits are transparent.
+//     Used for: player, animated whitehole, items.
+//
+//   void drawOverwrite(int16_t x, int16_t y, const uint8_t* bitmap, uint8_t frame);
+//     Draw a sprite frame overwriting existing pixels completely (both 0s and 1s).
+//
 // =============================================================================
 
 #endif // HAL_RENDERER_H

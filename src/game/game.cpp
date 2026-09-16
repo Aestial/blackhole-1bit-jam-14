@@ -93,9 +93,9 @@ void Game::renderTitle(HalRenderer& renderer) {
     renderer.setCursor(28, 8);
     renderer.print("SUPERMASSIVE");
 
-    // "BLACKHOLE" — 9 chars × 6px = 54px wide → x = (128-54)/2 = 37
+    // "WHITEHOLE" — 9 chars × 6px = 54px wide → x = (128-54)/2 = 37
     renderer.setCursor(37, 20);
-    renderer.print("BLACKHOLE");
+    renderer.print("WHITEHOLE");
 
     // High score
     renderer.setCursor(28, 36);
@@ -274,43 +274,44 @@ void Game::renderBackground(HalRenderer& renderer) {
 }
 
 void Game::renderEntities(HalRenderer& renderer) {
-    // TODO(M2): Draw each entity based on its type
-    //
-    // for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
-    //   Entity& e = entities.entities[i];
-    //   if (!e.active) continue;
-    //
-    //   int16_t sx = world.worldToScreenX(e.x);
-    //   int16_t sy = world.worldToScreenY(e.y);
-    //
-    //   // Skip if off-screen (optional optimization)
-    //   if (sx < -8 || sx > SCREEN_W + 8 || sy < -8 || sy > SCREEN_H + 8) continue;
-    //
-    //   switch (e.type) {
-    //     case ENTITY_FOOD_PIZZA:
-    //       // Filled triangle (equilateral, tip pointing up)
-    //       renderer.fillTriangle(sx, sy - 3,         // top vertex
-    //                              sx - 3, sy + 3,    // bottom-left
-    //                              sx + 3, sy + 3,    // bottom-right
-    //                              COLOR_WHITE);
-    //       break;
-    //     case ENTITY_FOOD_BURGER:
-    //       // Filled square
-    //       renderer.fillRect(sx - 3, sy - 3, 6, 6, COLOR_WHITE);
-    //       break;
-    //     case ENTITY_FOOD_DONUT:
-    //       // Filled circle
-    //       renderer.fillCircle(sx, sy, DONUT_SPRITE_RADIUS, COLOR_WHITE);
-    //       break;
-    //     case ENTITY_COLLECTIBLE:
-    //       // Diamond (rotated square) — draw as 4 lines
-    //       renderer.drawLine(sx, sy - 2, sx + 2, sy, COLOR_WHITE); // top-right
-    //       renderer.drawLine(sx + 2, sy, sx, sy + 2, COLOR_WHITE); // right-bottom
-    //       renderer.drawLine(sx, sy + 2, sx - 2, sy, COLOR_WHITE); // bottom-left
-    //       renderer.drawLine(sx - 2, sy, sx, sy - 2, COLOR_WHITE); // left-top
-    //       break;
-    //   }
-    // }
+    for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
+        const Entity& e = entities.entities[i];
+        if (!e.active) continue;
+
+        int16_t sx = world.worldToScreenX(e.x);
+        int16_t sy = world.worldToScreenY(e.y);
+
+        // Skip if completely off-screen
+        if (sx < -ITEM_SPRITE_WIDTH || sx > SCREEN_W + ITEM_SPRITE_WIDTH ||
+            sy < -ITEM_SPRITE_HEIGHT || sy > SCREEN_H + ITEM_SPRITE_HEIGHT) {
+            continue;
+        }
+
+        uint8_t frame = 0;
+        switch (e.type) {
+            case ENTITY_FOOD_PIZZA:
+                frame = SPRITE_ITEM_PIZZA;
+                break;
+            case ENTITY_FOOD_BURGER:
+                frame = SPRITE_ITEM_BURGER;
+                break;
+            case ENTITY_FOOD_DONUT:
+                frame = SPRITE_ITEM_DONUT;
+                break;
+            case ENTITY_FOOD_ICECREAM:
+                frame = SPRITE_ITEM_ICECREAM;
+                break;
+            case ENTITY_COLLECTIBLE:
+                frame = SPRITE_ITEM_COLLECTIBLE;
+                break;
+            default:
+                continue;
+        }
+
+        renderer.drawSelfMasked(sx - (ITEM_SPRITE_WIDTH / 2),
+                                sy - (ITEM_SPRITE_HEIGHT / 2),
+                                items_sprites, frame);
+    }
 }
 
 void Game::renderPlayer(HalRenderer& renderer) {
@@ -318,42 +319,29 @@ void Game::renderPlayer(HalRenderer& renderer) {
     int16_t sx = SCREEN_W / 2;
     int16_t sy = SCREEN_H / 2;
 
-    // Draw fat man as filled circle
-    renderer.fillCircle(sx, sy, PLAYER_SPRITE_RADIUS, COLOR_WHITE);
-
-    // TODO(M1): Visual feedback for food slow debuff
-    //   if (player.isSlowed()) {
-    //     // Blink: only draw on even frames, or draw a smaller circle
-    //     // Or draw an outline ring to indicate debuff
-    //     renderer.drawCircle(sx, sy, PLAYER_SPRITE_RADIUS + 2, COLOR_WHITE);
-    //   }
-
-    // TODO(M5): Replace with directional sprite based on player.desiredDx/Dy
-    //   Choose from 8 sprite frames based on facing direction
+    // Visual feedback for slow debuff: blink
+    if (!player.isSlowed() || ((player.slowTimer / 4) % 2 == 0)) {
+        renderer.drawSelfMasked(sx - (PLAYER_SPRITE_WIDTH / 2),
+                                sy - (PLAYER_SPRITE_HEIGHT / 2),
+                                player_sprite, 0);
+    }
 }
 
 void Game::renderBlackhole(HalRenderer& renderer) {
     int16_t sx = world.worldToScreenX(world.bhX);
     int16_t sy = world.worldToScreenY(world.bhY);
 
-    // TODO(M3): Fancy blackhole with concentric rings and spin animation
-    //
-    // Concentric circles (gravity well effect):
-    //   renderer.fillCircle(sx, sy, BH_RENDER_RADIUS, COLOR_WHITE);
-    //   renderer.fillCircle(sx, sy, BH_RENDER_RADIUS - 2, COLOR_BLACK);
-    //   renderer.drawCircle(sx, sy, BH_RENDER_RADIUS - 4, COLOR_WHITE);
-    //   renderer.fillCircle(sx, sy, 2, COLOR_BLACK);
-    //
-    // Spin animation (cosmetic):
-    //   Use world.bhSpin to rotate radiating lines:
-    //   for each of 4 "arms" at angle (bhSpin * 2 + arm * 64):
-    //     Draw a short line from center outward
-    //     (Use lookup table for sin/cos if available, or just 4 fixed offsets)
+    // Skip drawing if off-screen
+    if (sx < -WHITEHOLE_SPRITE_WIDTH || sx > SCREEN_W + WHITEHOLE_SPRITE_WIDTH ||
+        sy < -WHITEHOLE_SPRITE_HEIGHT || sy > SCREEN_H + WHITEHOLE_SPRITE_HEIGHT) {
+        return;
+    }
 
-    // STUB: Simple circle for now
-    renderer.drawCircle(sx, sy, BH_RENDER_RADIUS, COLOR_WHITE);
-    renderer.drawCircle(sx, sy, BH_RENDER_RADIUS / 2, COLOR_WHITE);
-    renderer.drawPixel(sx, sy, COLOR_WHITE);
+    // Animate swirling whitehole frames based on bhSpin
+    uint8_t frame = (world.bhSpin / 4) % WHITEHOLE_FRAME_COUNT;
+    renderer.drawSelfMasked(sx - (WHITEHOLE_SPRITE_WIDTH / 2),
+                            sy - (WHITEHOLE_SPRITE_HEIGHT / 2),
+                            whitehole_sprite, frame);
 }
 
 void Game::renderHUD(HalRenderer& renderer) {

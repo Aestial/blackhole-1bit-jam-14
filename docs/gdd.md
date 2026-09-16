@@ -1,16 +1,16 @@
-# Supermassive Blackhole — Game Design Document
+# Supermassive Whitehole — Game Design Document
 
 ## Overview
 
 | | |
 |---|---|
-| **Title** | Supermassive Blackhole |
+| **Title** | Supermassive Whitehole |
 | **Platform** | Arduboy (128×64, 1-bit, ATmega32u4) |
-| **Jam** | [1-Bit Jam 14](https://itch.io/jam/1-bit-jam-14) — Theme: "Blackhole" |
+| **Jam** | [1-Bit Jam 14](https://itch.io/jam/1-bit-jam-14) |
 | **Genre** | Top-down arcade survival / score attack |
 | **Controls** | D-pad (8-dir) + A (accelerate) + B (brake) |
 
-A fat man runs on a pseudo-3D top-down infinite plane, dodging delicious food and fleeing a pursuing supermassive blackhole. Inspired by the car control in [Crates](https://jessemillar.itch.io/crates).
+A fat man runs on a pseudo-3D top-down infinite plane, dodging delicious food (Pizza, Burger, Donut, and brain-freezing Ice Cream) and fleeing a pursuing supermassive whitehole. Inspired by the car control in [Crates](https://jessemillar.itch.io/crates).
 
 ---
 
@@ -78,13 +78,15 @@ TITLE → (Press A) → PLAYING → (Blackhole catches player) → GAME OVER
 ---
 
 ## Art Style
-1-bit (black and white). Currently placeholder shapes:
-- Player: Large filled circle
-- Food: Triangle (pizza), square (burger), small circle (donut)
-- Collectible: Diamond outline
-- Blackhole: Concentric circles
-
-Final art (M5): Custom pixel sprites, 8-directional player animation.
+1-bit (black and white) using dedicated PROGMEM bitmap sprites:
+- **Player**: 16x16 pixel character (`player_static.png`) with slow-debuff blinking
+- **Whitehole**: 32x32 animated swirling celestial hazard (4 frames, `whitehole_32.png`)
+- **Food**: 16x16 sprites (`items_16.png`):
+  - Pizza (light slow, -15%)
+  - Burger (medium slow, -30%)
+  - Donut (heavy slow, -50%)
+  - Ice Cream (brain freeze, -60%)
+- **Collectible**: 16x16 Gem / Crystal (`items_16.png`, +score)
 
 ---
 

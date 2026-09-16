@@ -33,7 +33,8 @@ void Entity::reset() {
 bool Entity::isFood() const {
     return (type == ENTITY_FOOD_PIZZA ||
             type == ENTITY_FOOD_BURGER ||
-            type == ENTITY_FOOD_DONUT);
+            type == ENTITY_FOOD_DONUT ||
+            type == ENTITY_FOOD_ICECREAM);
 }
 
 // -----------------------------------------------------------------------------
@@ -57,17 +58,12 @@ void EntityManager::init() {
 // TODO(M2): Implement — find first inactive slot, set type/pos/size, activate
 // -----------------------------------------------------------------------------
 bool EntityManager::spawn(EntityType type, fp32_t worldX, fp32_t worldY) {
-    // TODO(M2): Implement entity spawning
     // 1. Loop through entities[] to find first slot where type == ENTITY_NONE
     // 2. If found:
     //    a. Set entity.type = type
     //    b. Set entity.x = worldX, entity.y = worldY
     //    c. Set entity.active = true
-    //    d. Set width/height based on type:
-    //       - ENTITY_FOOD_PIZZA:  w=h=FOOD_PIZZA_SIZE (6)
-    //       - ENTITY_FOOD_BURGER: w=h=FOOD_BURGER_SIZE (6)
-    //       - ENTITY_FOOD_DONUT:  w=h=FOOD_DONUT_SIZE (4)
-    //       - ENTITY_COLLECTIBLE: w=h=COLLECTIBLE_SIZE (4)
+    //    d. Set width/height based on type
     //    e. Return true
     // 3. If no slot found, return false (pool full — silently drop spawn)
 
@@ -90,6 +86,10 @@ bool EntityManager::spawn(EntityType type, fp32_t worldX, fp32_t worldY) {
                 case ENTITY_FOOD_DONUT:
                     entities[i].width = FOOD_DONUT_SIZE;
                     entities[i].height = FOOD_DONUT_SIZE;
+                    break;
+                case ENTITY_FOOD_ICECREAM:
+                    entities[i].width = FOOD_ICECREAM_SIZE;
+                    entities[i].height = FOOD_ICECREAM_SIZE;
                     break;
                 case ENTITY_COLLECTIBLE:
                     entities[i].width = COLLECTIBLE_SIZE;
