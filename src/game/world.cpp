@@ -111,41 +111,56 @@ void World::resetScoreTimer() {
 }
 
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // World::worldToScreenX()
 // -----------------------------------------------------------------------------
-int16_t World::worldToScreenX(fp32_t worldX) const {
-    return (int16_t)FP32_TO_INT(worldX - camX) + (SCREEN_W / 2);
+int16_t World::worldToScreenX(fp32_t worldX, fp32_t worldY) const {
+    int16_t dx = (int16_t)FP32_TO_INT(worldX - camX);
+    int16_t dy = (int16_t)FP32_TO_INT(worldY - camY);
+    int16_t z = GROUND_DEPTH_PLAYER + dy;
+    if (z < 0) z = 0;
+    if (z > 140) z = 140;
+    // Perspective horizontal scale: (40 + z) / 160
+    return (int16_t)((SCREEN_W / 2) + (int16_t)(((int32_t)dx * (40 + z)) / 160));
 }
 
 // -----------------------------------------------------------------------------
 // World::worldToScreenY()
 // -----------------------------------------------------------------------------
 int16_t World::worldToScreenY(fp32_t worldY) const {
-    return (int16_t)FP32_TO_INT(worldY - camY) + (SCREEN_H / 2);
+    int16_t dy = (int16_t)FP32_TO_INT(worldY - camY);
+    int16_t z = GROUND_DEPTH_PLAYER + dy;
+    if (z <= 0) {
+        // Beyond the horizon: linear falloff into the distance above horizon
+        return HORIZON_Y + (int16_t)(((int32_t)50 * z) / 120);
+    }
+    // Ground height: 50px (from HORIZON_Y=14 to 64). Quadratic curve: y = HORIZON_Y + (50 * z^2) / 14400
+    int32_t z32 = z;
+    return HORIZON_Y + (int16_t)((50 * z32 * z32) / 14400);
 }
 
 // -----------------------------------------------------------------------------
 // World::isOnScreen()
 // -----------------------------------------------------------------------------
 bool World::isOnScreen(fp32_t worldX, fp32_t worldY, uint8_t w, uint8_t h) const {
-    int16_t sx = worldToScreenX(worldX);
+    int16_t sx = worldToScreenX(worldX, worldY);
     int16_t sy = worldToScreenY(worldY);
 
-    // Check if the entity's bounding box overlaps the screen
+    // Check if the entity's bounding box overlaps the visible screen
     return (sx + w / 2 >= 0 && sx - w / 2 < SCREEN_W &&
-            sy + h / 2 >= 0 && sy - h / 2 < SCREEN_H);
+            sy + h / 2 >= HORIZON_Y && sy - h / 2 < SCREEN_H);
 }
 
 // -----------------------------------------------------------------------------
 // World::isTooFar()
 // -----------------------------------------------------------------------------
 bool World::isTooFar(fp32_t worldX, fp32_t worldY) const {
-    int16_t sx = worldToScreenX(worldX);
+    int16_t sx = worldToScreenX(worldX, worldY);
     int16_t sy = worldToScreenY(worldY);
 
     // Entity is "too far" if it's more than DESPAWN_DISTANCE from any screen edge
     return (sx < -(int16_t)DESPAWN_DISTANCE ||
             sx > (int16_t)(SCREEN_W + DESPAWN_DISTANCE) ||
-            sy < -(int16_t)DESPAWN_DISTANCE ||
+            sy < (int16_t)HORIZON_Y - (int16_t)DESPAWN_DISTANCE ||
             sy > (int16_t)(SCREEN_H + DESPAWN_DISTANCE));
 }

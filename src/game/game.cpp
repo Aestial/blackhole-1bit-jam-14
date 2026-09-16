@@ -239,38 +239,40 @@ void Game::renderGameOver(HalRenderer& renderer) {
 // =============================================================================
 
 void Game::renderBackground(HalRenderer& renderer) {
-    // TODO(M1): Basic scrolling grid
-    // TODO(M4): Converging grid toward blackhole
-    //
-    // BASIC GRID ALGORITHM (M1):
-    //   // Vertical lines
-    //   int16_t offsetX = (int16_t)(FP32_TO_INT(world.camX) % GRID_SPACING);
-    //   for (int16_t x = -offsetX; x < SCREEN_W; x += GRID_SPACING) {
-    //     renderer.drawLine(x, 0, x, SCREEN_H - 1, COLOR_WHITE);
-    //   }
-    //   // Horizontal lines
-    //   int16_t offsetY = (int16_t)(FP32_TO_INT(world.camY) % GRID_SPACING);
-    //   for (int16_t y = -offsetY; y < SCREEN_H; y += GRID_SPACING) {
-    //     renderer.drawLine(0, y, SCREEN_W - 1, y, COLOR_WHITE);
-    //   }
-    //
-    // CONVERGING GRID (M4):
-    //   See game.h renderBackground() docs for the displacement algorithm.
-    //   Displace grid intersections toward blackhole screen position.
+    // =========================================================================
+    // Milestone 1 (M1): Clean Pseudo-3D Perspective Ground Grid
+    // =========================================================================
+    // Renders an infinite perspective grid with a clean horizon at y = 14:
+    // - Above horizon (y < 14): Open celestial void (clean space for HUD/score).
+    // - Horizon line drawn at y = 14.
+    // - Perspective rays radiate outward from horizon to screen bottom, scrolling with camX.
+    // - Horizontal depth lines are geometrically foreshortened (quadratic scale),
+    //   scrolling smoothly with camY.
 
-    // STUB: Draw a simple dot pattern for now (very lightweight)
-    int16_t offsetX = (int16_t)(FP32_TO_INT(world.camX) % GRID_SPACING);
-    int16_t offsetY = (int16_t)(FP32_TO_INT(world.camY) % GRID_SPACING);
+    // 1. Horizon Line
+    renderer.drawLine(0, HORIZON_Y, SCREEN_W - 1, HORIZON_Y, COLOR_WHITE);
 
-    // Handle negative modulo
-    if (offsetX < 0) offsetX += GRID_SPACING;
-    if (offsetY < 0) offsetY += GRID_SPACING;
+    // 2. Perspective Rays (scrolling with camX)
+    int16_t camX_int = (int16_t)FP32_TO_INT(world.camX);
+    int16_t xOffset = camX_int % BASE_SPACING_X;
+    if (xOffset < 0) xOffset += BASE_SPACING_X;
 
-    for (int16_t x = -offsetX; x <= SCREEN_W; x += GRID_SPACING) {
-        for (int16_t y = -offsetY; y <= SCREEN_H; y += GRID_SPACING) {
-            if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H) {
-                renderer.drawPixel(x, y, COLOR_WHITE);
-            }
+    for (int16_t bx = -xOffset - BASE_SPACING_X * 2; bx <= SCREEN_W + BASE_SPACING_X * 2; bx += BASE_SPACING_X) {
+        int16_t tx = (SCREEN_W / 2) + ((bx - (SCREEN_W / 2)) * TOP_SPACING_X) / BASE_SPACING_X;
+        renderer.drawLine(tx, HORIZON_Y, bx, SCREEN_H - 1, COLOR_WHITE);
+    }
+
+    // 3. Geometrically foreshortened depth lines (scrolling smoothly with camY)
+    int16_t camY_int = (int16_t)FP32_TO_INT(world.camY);
+    int16_t zOffset = camY_int % Z_PERIOD;
+    if (zOffset < 0) zOffset += Z_PERIOD;
+
+    // Ground height: 64 - 14 = 50px. Quadratic curve: y = HORIZON_Y + (50 * z^2) / 14400
+    for (int16_t z = Z_PERIOD - zOffset; z <= 120; z += Z_PERIOD) {
+        int32_t z32 = z;
+        int16_t yLine = HORIZON_Y + (int16_t)((50 * z32 * z32) / 14400);
+        if (yLine > HORIZON_Y && yLine < SCREEN_H) {
+            renderer.drawLine(0, yLine, SCREEN_W - 1, yLine, COLOR_WHITE);
         }
     }
 }
@@ -280,12 +282,13 @@ void Game::renderEntities(HalRenderer& renderer) {
         const Entity& e = entities.entities[i];
         if (!e.active) continue;
 
-        int16_t sx = world.worldToScreenX(e.x);
+        // Project entity onto perspective ground grid
+        int16_t sx = world.worldToScreenX(e.x, e.y);
         int16_t sy = world.worldToScreenY(e.y);
 
-        // Skip if completely off-screen
+        // Skip if completely off-screen or far beyond horizon
         if (sx < -ITEM_SPRITE_WIDTH || sx > SCREEN_W + ITEM_SPRITE_WIDTH ||
-            sy < -ITEM_SPRITE_HEIGHT || sy > SCREEN_H + ITEM_SPRITE_HEIGHT) {
+            sy < HORIZON_Y - ITEM_SPRITE_HEIGHT || sy > SCREEN_H + ITEM_SPRITE_HEIGHT) {
             continue;
         }
 
@@ -317,9 +320,9 @@ void Game::renderEntities(HalRenderer& renderer) {
 }
 
 void Game::renderPlayer(HalRenderer& renderer) {
-    // Player is always at screen center (camera follows directly)
-    int16_t sx = SCREEN_W / 2;
-    int16_t sy = SCREEN_H / 2;
+    // Player position on perspective ground plane
+    int16_t sx = world.worldToScreenX(player.x, player.y);
+    int16_t sy = world.worldToScreenY(player.y);
 
     // Visual feedback for slow debuff: blink (slower cadence)
     if (!player.isSlowed() || ((player.slowTimer / PLAYER_BLINK_DIVISOR) % 2 == 0)) {
@@ -330,12 +333,13 @@ void Game::renderPlayer(HalRenderer& renderer) {
 }
 
 void Game::renderBlackhole(HalRenderer& renderer) {
-    int16_t sx = world.worldToScreenX(world.bhX);
+    // Project whitehole/blackhole onto perspective ground grid
+    int16_t sx = world.worldToScreenX(world.bhX, world.bhY);
     int16_t sy = world.worldToScreenY(world.bhY);
 
-    // Skip drawing if off-screen
+    // Skip drawing if completely off-screen or far beyond horizon
     if (sx < -WHITEHOLE_SPRITE_WIDTH || sx > SCREEN_W + WHITEHOLE_SPRITE_WIDTH ||
-        sy < -WHITEHOLE_SPRITE_HEIGHT || sy > SCREEN_H + WHITEHOLE_SPRITE_HEIGHT) {
+        sy < HORIZON_Y - WHITEHOLE_SPRITE_HEIGHT || sy > SCREEN_H + WHITEHOLE_SPRITE_HEIGHT) {
         return;
     }
 

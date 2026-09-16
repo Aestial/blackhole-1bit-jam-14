@@ -18,6 +18,7 @@
 // =============================================================================
 
 #include "player.h"
+#include "physics.h"
 
 // -----------------------------------------------------------------------------
 // Player::init()
@@ -40,23 +41,11 @@ void Player::init() {
 // Player::update()
 // -----------------------------------------------------------------------------
 void Player::update(bool up, bool down, bool left, bool right, bool accel, bool brake, fp_t dt) {
+    // 1. Calculate desired direction from D-pad inputs
     desiredDx = (right ? 1 : 0) - (left ? 1 : 0);
     desiredDy = (down  ? 1 : 0) - (up   ? 1 : 0);
 
-    if (accel) {
-        vx += FP_MUL(desiredDx * PLAYER_ACCEL, dt);
-        vy += FP_MUL(desiredDy * PLAYER_ACCEL, dt);
-    }
-
-    // Friction scaled by dt
-    fp_t friction = brake ? PLAYER_BRAKE_FRICTION : PLAYER_FRICTION;
-    fp_t fStep = FP_MUL(friction, dt);
-    if (vx > 0) { vx -= fStep; if (vx < 0) vx = 0; }
-    if (vx < 0) { vx += fStep; if (vx > 0) vx = 0; }
-    if (vy > 0) { vy -= fStep; if (vy < 0) vy = 0; }
-    if (vy < 0) { vy += fStep; if (vy > 0) vy = 0; }
-
-    // Speed clamp (apply food slow if active)
+    // 2. Determine effective max speed (adjusted for food slow debuff)
     fp_t maxSpd = PLAYER_MAX_SPEED;
     if (slowTimer > 0) {
         maxSpd = (fp_t)((int32_t)maxSpd * (100 - slowIntensity) / 100);
@@ -68,12 +57,63 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
     } else {
         slowTimerAccum = 0;
     }
-    if (vx >  maxSpd) vx =  maxSpd;
-    if (vx < -maxSpd) vx = -maxSpd;
-    if (vy >  maxSpd) vy =  maxSpd;
-    if (vy < -maxSpd) vy = -maxSpd;
 
-    // Update position scaled by dt
+    // 3. Directional thrust & inertia blending
+    if (accel && (desiredDx != 0 || desiredDy != 0)) {
+        // Diagonal normalization in Q8.8 (DIAGONAL_FACTOR = 181 ~= 0.7071)
+        fp_t dirX, dirY;
+        if (desiredDx != 0 && desiredDy != 0) {
+            dirX = desiredDx * DIAGONAL_FACTOR;
+            dirY = desiredDy * DIAGONAL_FACTOR;
+        } else {
+            dirX = INT_TO_FP(desiredDx);
+            dirY = INT_TO_FP(desiredDy);
+        }
+
+        // Target velocity vector based on desired heading and max speed
+        fp_t targetVx = FP_MUL(dirX, maxSpd);
+        fp_t targetVy = FP_MUL(dirY, maxSpd);
+
+        // Inertia blending: smooth velocity vector steering towards target direction
+        fp_t blend = PLAYER_INERTIA;
+        vx = FP_MUL(vx, blend) + FP_MUL(targetVx, FP_ONE - blend);
+        vy = FP_MUL(vy, blend) + FP_MUL(targetVy, FP_ONE - blend);
+
+        // Direct acceleration step scaled by delta-time
+        fp_t thrustStep = FP_MUL(PLAYER_ACCEL, dt);
+        vx += FP_MUL(dirX, thrustStep);
+        vy += FP_MUL(dirY, thrustStep);
+    }
+
+    // 4. Deceleration (Active braking or passive friction)
+    if (brake) {
+        // Holding B applies strong braking friction
+        fp_t fStep = FP_MUL(PLAYER_BRAKE_FRICTION, dt);
+        if (vx > 0) { vx -= fStep; if (vx < 0) vx = 0; }
+        if (vx < 0) { vx += fStep; if (vx > 0) vx = 0; }
+        if (vy > 0) { vy -= fStep; if (vy < 0) vy = 0; }
+        if (vy < 0) { vy += fStep; if (vy > 0) vy = 0; }
+    } else if (!accel) {
+        // When not accelerating, apply passive drag for smooth drift/gliding
+        fp_t fStep = FP_MUL(PLAYER_FRICTION, dt);
+        if (vx > 0) { vx -= fStep; if (vx < 0) vx = 0; }
+        if (vx < 0) { vx += fStep; if (vx > 0) vx = 0; }
+        if (vy > 0) { vy -= fStep; if (vy < 0) vy = 0; }
+        if (vy < 0) { vy += fStep; if (vy > 0) vy = 0; }
+    }
+
+    // 5. Circular velocity magnitude clamping (guarantees equal max speed in all directions)
+    int32_t speedSq = (int32_t)vx * vx + (int32_t)vy * vy;
+    int32_t maxSpdSq = (int32_t)maxSpd * maxSpd;
+    if (speedSq > maxSpdSq) {
+        fp_t currentSpeed = (fp_t)approxDistance(0, 0, vx, vy);
+        if (currentSpeed > 0) {
+            vx = (fp_t)(((int32_t)vx * maxSpd) / currentSpeed);
+            vy = (fp_t)(((int32_t)vy * maxSpd) / currentSpeed);
+        }
+    }
+
+    // 6. Integrate position scaled by delta-time
     x += FP32_MUL(vx, dt);
     y += FP32_MUL(vy, dt);
 }

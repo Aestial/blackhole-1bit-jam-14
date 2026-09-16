@@ -147,15 +147,14 @@ arduino-cli compile --fqbn arduboy:avr:arduboy ./
 arduino-cli upload --fqbn arduboy:avr:arduboy --port /dev/ttyACM0 ./
 ```
 
-## Milestones & TODO Map
+## Milestones & Roadmap
 
-| Milestone | Files to Modify | What to Implement |
-|-----------|----------------|-------------------|
-| **M1** | `player.cpp`, `game.cpp` | Full inertia physics in `update()`, basic grid in `renderBackground()`, slow visual feedback in `renderPlayer()` |
-| **M2** | `game.cpp` | Entity spawning (random type+position), collision responses, despawning, `renderEntities()` |
-| **M3** | `game.cpp` | Enable blackhole gravity loop, `renderBlackhole()` with concentric rings + spin |
-| **M4** | `game.cpp` | Polish `renderTitle()`, `renderGameOver()`, `renderHUD()`, converging grid distortion |
-| **M5** | `assets/sprites.h`, `game.cpp` | Replace primitives with PROGMEM bitmap sprites, 8-dir player animation |
-| **M6** | All files | Playtesting, balance tuning, bug fixes |
-
-Every TODO in the codebase is tagged with its milestone: `TODO(M1)`, `TODO(M2)`, etc.
+| Milestone | Status | Files Modified | Description |
+|-----------|--------|----------------|-------------|
+| **M0** | ✅ Complete | Full tree | Project scaffold, architecture, HAL interfaces, game state machine |
+| **M1** | ✅ Complete | `player.cpp`, `game.cpp`, `config.h` | Hybrid inertia physics with velocity blending, 8-dir normalization, braking, and pseudo-3D perspective ground grid |
+| **M2** | 📋 Planned | `game.cpp`, `world.cpp` | Entity spawning (random type+position), collision responses, despawning, `renderEntities()` |
+| **M3** | 📋 Planned | `game.cpp` | Enable blackhole gravity loop, `renderBlackhole()` with concentric rings + spin |
+| **M4** | 📋 Planned | `game.cpp` | Polish `renderTitle()`, `renderGameOver()`, `renderHUD()`, converging grid distortion |
+| **M5** | 📋 Planned | `assets/sprites.h`, `game.cpp` | Replace primitives with PROGMEM bitmap sprites, 8-dir player animation |
+| **M6** | 📋 Planned | All files | Playtesting, balance tuning, bug fixes |

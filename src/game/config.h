@@ -130,32 +130,30 @@ static const uint8_t WHITEHOLE_ANIM_DIVISOR = 12; // 60 FPS / 12 = 5 FPS sprite 
 static const uint8_t PLAYER_BLINK_DIVISOR   = 8;  // 60 FPS / 8 = 7.5 Hz debuff blink cadence
 
 // =============================================================================
-// PLAYER PHYSICS CONSTANTS
+// PLAYER PHYSICS CONSTANTS (HYBRID INERTIA)
 // =============================================================================
 // The player uses a HYBRID INERTIA control model:
-//   - D-pad sets the "desired direction" (8-dir + idle)
+//   - D-pad sets the "desired direction" (8-dir + idle, normalized diagonally)
 //   - Velocity BLENDS toward the desired direction over time (inertia)
 //   - A button applies thrust (accelerates in desired direction)
 //   - B button applies extra friction (brakes)
 //   - The fat man feels heavy, drifts when turning, and takes time to stop
 //
-// FOR IMPLEMENTING AGENTS (M1):
-//   The key to the "feel" is the INERTIA factor. Higher inertia = more drift.
-//   Start with these values and playtest. The player should feel like steering
-//   a shopping cart — responsive enough to be fun, drifty enough to be skillful.
-//
-//   Acceleration: how fast the player gains speed when holding A + direction
-//   Friction: passive deceleration when not accelerating (lower = more slide)
-//   Brake friction: stronger deceleration when holding B
-//   Inertia: how slowly velocity direction changes (0 = instant, 255 = ice)
-//   Max speed: velocity magnitude cap (before food slow debuff)
+// Tuning parameters:
+//   PLAYER_ACCEL: thrust per frame (responsive takeoff)
+//   PLAYER_FRICTION: passive drag per frame (smooth glide)
+//   PLAYER_BRAKE_FRICTION: drag when B held (responsive braking/drifting)
+//   PLAYER_MAX_SPEED: velocity magnitude cap (60 px/sec across 128px screen)
+//   PLAYER_INERTIA: velocity blend factor in Q8.8 (0.85 = heavy drift)
+//   DIAGONAL_FACTOR: 1/sqrt(2) in Q8.8 (181/256 = 0.7071) for equal 8-dir speed
 
-static const fp_t PLAYER_ACCEL          = FLOAT_TO_FP(0.08);  // Thrust per frame (manageable ramp-up)
-static const fp_t PLAYER_FRICTION       = FLOAT_TO_FP(0.015); // Passive drag per frame
-static const fp_t PLAYER_BRAKE_FRICTION = FLOAT_TO_FP(0.05);  // Drag when B held
-static const fp_t PLAYER_MAX_SPEED      = FLOAT_TO_FP(1.0);   // Max velocity magnitude (60 px/sec across 128px screen)
+static const fp_t PLAYER_ACCEL          = FLOAT_TO_FP(0.09);  // Thrust per frame
+static const fp_t PLAYER_FRICTION       = FLOAT_TO_FP(0.012); // Passive drag per frame
+static const fp_t PLAYER_BRAKE_FRICTION = FLOAT_TO_FP(0.06);  // Drag when B held
+static const fp_t PLAYER_MAX_SPEED      = FLOAT_TO_FP(1.05);  // Max velocity magnitude
 static const fp_t PLAYER_INERTIA        = FLOAT_TO_FP(0.85);  // Velocity blend factor (0-1)
-                                                                // High = more drift
+static const fp_t DIAGONAL_FACTOR       = 181;                // 1/sqrt(2) in Q8.8 (~0.7071)
+
 // Player hitbox size in pixels (used for collision detection)
 static const uint8_t PLAYER_WIDTH  = 10;
 static const uint8_t PLAYER_HEIGHT = 10;
@@ -286,20 +284,19 @@ static const uint8_t SCORE_PER_TICK        = 1;   // Points per time tick
 static const uint16_t EEPROM_HIGH_SCORE_ADDR = 16;
 
 // =============================================================================
-// BACKGROUND GRID
+// PERSPECTIVE GROUND PLANE
 // =============================================================================
-// The infinite plane is rendered as a square line grid that visually
-// converges toward the blackhole's screen position, simulating space-time
-// distortion. The grid scrolls with the camera.
-//
-// FOR IMPLEMENTING AGENTS (M4):
-//   Draw horizontal and vertical grid lines at GRID_SPACING intervals,
-//   offset by camera position (modulo GRID_SPACING for infinite scrolling).
-//   Then displace each grid intersection point toward the blackhole's
-//   screen position by an amount proportional to 1/distance (or skip
-//   distortion and just angle the lines — static distortion is acceptable).
+// Parameters for the pseudo-3D perspective ground grid:
+// - Horizon line Y: separates celestial sky void from the ground plane
+// - Ground depth Z at player: depth corresponding to screen center Y = 32
+// - Spacing of perspective rays and depth lines
+static const int16_t HORIZON_Y            = 14;  // Horizon line Y coordinate
+static const int16_t GROUND_DEPTH_PLAYER  = 72;  // Depth Z at player (screen Y = 32)
+static const int16_t BASE_SPACING_X       = 24;  // Ray spacing at screen bottom
+static const int16_t TOP_SPACING_X        = 6;   // Ray spacing at horizon line
+static const int16_t Z_PERIOD             = 24;  // Depth line period
 
-static const uint8_t GRID_SPACING = 16;  // Pixels between grid lines
+static const uint8_t GRID_SPACING         = 16;  // Pixels between grid lines
 
 // =============================================================================
 // COLORS (1-bit: 0=BLACK, 1=WHITE)

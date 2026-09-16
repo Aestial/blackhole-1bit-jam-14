@@ -251,34 +251,15 @@ private:
     // ---- Individual render components ----
 
     // =========================================================================
-    // renderBackground(renderer) — Draw the infinite plane grid
+    // renderBackground(renderer) — Draw the infinite perspective ground grid
     // =========================================================================
-    // Draws a square line grid that scrolls with the camera and visually
-    // converges toward the blackhole's screen position.
+    // Renders a pseudo-3D perspective plane with horizon at y=14:
+    // - Horizon line separates open sky / celestial void from the ground plane.
+    // - Perspective rays radiate outward to screen bottom, scrolling with camX.
+    // - Foreshortened horizontal depth lines scroll with camY with quadratic scale.
     //
-    // BASIC IMPLEMENTATION (M1 — scrolling grid, no distortion):
-    //   Draw vertical lines at X positions:
-    //     for each gridLine where x % GRID_SPACING == 0:
-    //       screenX = gridLine - FP32_TO_INT(camX) % GRID_SPACING
-    //       renderer.drawLine(screenX, 0, screenX, SCREEN_H, COLOR_WHITE)
-    //   Same for horizontal lines.
-    //   The modulo creates infinite scrolling.
-    //
-    // ADVANCED IMPLEMENTATION (M4 — converging toward blackhole):
-    //   After drawing the basic grid, displace grid intersection points
-    //   toward the blackhole's screen position:
-    //     bhScreenX = world.worldToScreenX(world.bhX)
-    //     bhScreenY = world.worldToScreenY(world.bhY)
-    //   For each grid intersection (ix, iy):
-    //     dx = bhScreenX - ix
-    //     dy = bhScreenY - iy
-    //     dist = approxDistance(ix, iy, bhScreenX, bhScreenY)
-    //     if dist > 0:
-    //       displacement = BH_RENDER_RADIUS * 64 / dist  (inverse distance)
-    //       ix += dx * displacement / dist
-    //       iy += dy * displacement / dist
-    //   Then draw lines between displaced intersections instead of straight lines.
-    //   Static distortion is fine — no need to animate it per frame.
+    // ADVANCED EXTENSION (M4 — converging toward blackhole):
+    //   Optional space-time distortion around blackhole position.
     void renderBackground(HalRenderer& renderer);
 
     // =========================================================================

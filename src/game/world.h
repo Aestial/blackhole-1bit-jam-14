@@ -168,12 +168,10 @@ struct World {
     // worldToScreenX / worldToScreenY — Convert world coords to screen coords
     // =========================================================================
     // Used by Game render methods to position sprites on screen.
-    // The camera is centered on the player (screen center = SCREEN_W/2, SCREEN_H/2).
-    //
-    //   screenX = FP32_TO_INT(worldX - camX) + SCREEN_W / 2
-    //   screenY = FP32_TO_INT(worldY - camY) + SCREEN_H / 2
-    //
-    int16_t worldToScreenX(fp32_t worldX) const;
+    // Projects world coordinates (worldX, worldY) onto the pseudo-3D perspective
+    // ground plane with quadratic depth foreshortening and ray convergence.
+    int16_t worldToScreenX(fp32_t worldX, fp32_t worldY) const;
+    int16_t worldToScreenX(fp32_t worldX) const { return worldToScreenX(worldX, camY); }
     int16_t worldToScreenY(fp32_t worldY) const;
 
     // =========================================================================

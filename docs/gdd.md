@@ -45,7 +45,8 @@ The blackhole tracks the player's position at a speed that linearly increases ov
 
 ### Infinite Plane
 - Camera follows player
-- Square line grid background with lines converging toward blackhole
+- Pseudo-3D perspective ground grid scrolling seamlessly in all 8 directions
+- Clear horizon line (y=14) separating upper celestial void from the scrolling ground plane
 - Entities spawn around the player, despawn when far off-screen
 
 ---
@@ -91,12 +92,12 @@ TITLE → (Press A) → PLAYING → (Blackhole catches player) → GAME OVER
 ---
 
 ## Milestones
-| Phase | Deliverable |
-|-------|-------------|
-| M0 | Project scaffold, architecture, HAL interfaces |
-| M1 | Player movement with inertia physics, scrolling grid |
-| M2 | Entity spawning, collision detection, scoring |
-| M3 | Blackhole chase, gravity pull, difficulty ramp |
-| M4 | Polished UI (title, game over, HUD), converging grid |
-| M5 | Real sprites, visual effects, audio |
-| M6 | Playtesting, balance tuning, jam submission |
+| Phase | Deliverable | Status |
+|-------|-------------|--------|
+| M0 | Project scaffold, architecture, HAL interfaces | ✅ Complete |
+| M1 | Player movement with hybrid inertia physics, perspective ground grid | ✅ Complete |
+| M2 | Entity spawning, collision detection, scoring | 📋 Planned |
+| M3 | Blackhole chase, gravity pull, difficulty ramp | 📋 Planned |
+| M4 | Polished UI (title, game over, HUD), converging grid | 📋 Planned |
+| M5 | Real sprites, visual effects, audio | 📋 Planned |
+| M6 | Playtesting, balance tuning, jam submission | 📋 Planned |
