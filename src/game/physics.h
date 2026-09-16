@@ -124,7 +124,7 @@ fp32_t approxDistance(fp32_t x0, fp32_t y0, fp32_t x1, fp32_t y1);
 //   (Use FP32 multiplication to avoid overflow)
 void moveToward(fp32_t& x, fp32_t& y,
                 fp32_t targetX, fp32_t targetY,
-                fp_t speed);
+                fp_t speed, fp_t dt = FP_DT_ONE);
 
 // =============================================================================
 // applyBlackholeGravity — Pull an entity toward the blackhole
@@ -140,13 +140,15 @@ void moveToward(fp32_t& x, fp32_t& y,
 //   bhX, bhY         — Blackhole position
 //   mass             — Blackhole mass (pull strength, Q8.8)
 //   chargeRadius     — How far the gravity reaches (Q24.8 world units)
+//   dt               — Normalized delta-time in Q8.8 (default = FP_DT_ONE)
 //
 // USAGE (in Game::updatePlaying, M3):
 //   for each active entity:
 //     applyBlackholeGravity(entity.x, entity.y, world.bhX, world.bhY,
-//                            world.bhMass, world.bhCharge);
+//                            world.bhMass, world.bhCharge, dt);
 void applyBlackholeGravity(fp32_t& entityX, fp32_t& entityY,
                             fp32_t bhX, fp32_t bhY,
-                            fp_t mass, fp32_t chargeRadius);
+                            fp_t mass, fp32_t chargeRadius,
+                            fp_t dt = FP_DT_ONE);
 
 #endif // PHYSICS_H

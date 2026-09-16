@@ -32,48 +32,53 @@ void World::init() {
     spawnTimer = SPAWN_INTERVAL_START;
     spawnInterval = SPAWN_INTERVAL_START;
     scoreTimer = SCORE_TIME_INTERVAL;
+    timeAccum = 0;
 }
 
 // -----------------------------------------------------------------------------
 // World::update()
 // -----------------------------------------------------------------------------
-void World::update(fp32_t playerX, fp32_t playerY) {
+void World::update(fp32_t playerX, fp32_t playerY, fp_t dt) {
     // 1. Update camera — directly follow player (no smoothing for now)
     camX = playerX;
     camY = playerY;
 
-    // 2. Move blackhole toward player
-    //    TODO(M3): Uncomment when physics.h moveToward is integrated:
-    moveToward(bhX, bhY, playerX, playerY, bhSpeed);
+    // 2. Move blackhole toward player (motion vector scaled by dt)
+    moveToward(bhX, bhY, playerX, playerY, bhSpeed, dt);
 
-    // 3. Spin (cosmetic — wraps at 255 automatically for uint8_t)
-    bhSpin++;
+    // 3. Sub-frame time accumulator for timers, spin, and difficulty ramping
+    timeAccum += dt;
+    while (timeAccum >= FP_DT_ONE) {
+        timeAccum -= FP_DT_ONE;
 
-    // 4. Ramp difficulty (linear increase over time)
-    //    bhSpeed increases by a tiny amount each frame (BH_SPEED_INCREMENT = 1 in Q8.8 = 1/256)
-    bhSpeed += BH_SPEED_INCREMENT;
+        // Spin (cosmetic — wraps at 255 automatically for uint8_t)
+        bhSpin++;
 
-    //    bhCharge (attraction radius) also increases
-    bhCharge += BH_CHARGE_INCREMENT;
+        // Increment game time
+        gameTime++;
 
-    //    Spawn interval decreases every SPAWN_RAMP_INTERVAL frames
-    if (gameTime > 0 && (gameTime % SPAWN_RAMP_INTERVAL) == 0) {
-        if (spawnInterval > SPAWN_MIN_INTERVAL) {
-            spawnInterval--;
+        // Decrement spawn timer
+        if (spawnTimer > 0) {
+            spawnTimer--;
         }
-    }
 
-    // 5. Decrement spawn timer
-    if (spawnTimer > 0) {
-        spawnTimer--;
-    }
+        // Decrement score timer
+        if (scoreTimer > 0) {
+            scoreTimer--;
+        }
 
-    // 6. Increment game time
-    gameTime++;
-
-    // 7. Decrement score timer
-    if (scoreTimer > 0) {
-        scoreTimer--;
+        // Ramp difficulty (linear increase over time)
+        if (gameTime > 0 && (gameTime % BH_SPEED_RAMP_INTERVAL) == 0) {
+            bhSpeed += BH_SPEED_INCREMENT;
+        }
+        if (gameTime > 0 && (gameTime % BH_CHARGE_RAMP_INTERVAL) == 0) {
+            bhCharge += BH_CHARGE_INCREMENT;
+        }
+        if (gameTime > 0 && (gameTime % SPAWN_RAMP_INTERVAL) == 0) {
+            if (spawnInterval > SPAWN_MIN_INTERVAL) {
+                spawnInterval--;
+            }
+        }
     }
 }
 

@@ -118,6 +118,17 @@ typedef int32_t fp32_t;  // Q16.8 or Q24.8 for world coordinates (large range)
 
 static const uint8_t TARGET_FPS = 60;
 
+// Delta-time normalization: 1.0 in Q8.8 represents exactly one 60 FPS frame (16.67ms)
+#define FP_DT_ONE FP_ONE
+
+// =============================================================================
+// ANIMATION TIMING CONSTANTS
+// =============================================================================
+// Divisors to convert frame/spin ticks into sprite animation frames.
+// Higher divisor = slower, smoother, more deliberate animation.
+static const uint8_t WHITEHOLE_ANIM_DIVISOR = 12; // 60 FPS / 12 = 5 FPS sprite animation (~0.8s per revolution)
+static const uint8_t PLAYER_BLINK_DIVISOR   = 8;  // 60 FPS / 8 = 7.5 Hz debuff blink cadence
+
 // =============================================================================
 // PLAYER PHYSICS CONSTANTS
 // =============================================================================
@@ -139,10 +150,10 @@ static const uint8_t TARGET_FPS = 60;
 //   Inertia: how slowly velocity direction changes (0 = instant, 255 = ice)
 //   Max speed: velocity magnitude cap (before food slow debuff)
 
-static const fp_t PLAYER_ACCEL          = FLOAT_TO_FP(0.15);  // Thrust per frame
-static const fp_t PLAYER_FRICTION       = FLOAT_TO_FP(0.02);  // Passive drag per frame
-static const fp_t PLAYER_BRAKE_FRICTION = FLOAT_TO_FP(0.08);  // Drag when B held
-static const fp_t PLAYER_MAX_SPEED      = FLOAT_TO_FP(2.0);   // Max velocity magnitude
+static const fp_t PLAYER_ACCEL          = FLOAT_TO_FP(0.08);  // Thrust per frame (manageable ramp-up)
+static const fp_t PLAYER_FRICTION       = FLOAT_TO_FP(0.015); // Passive drag per frame
+static const fp_t PLAYER_BRAKE_FRICTION = FLOAT_TO_FP(0.05);  // Drag when B held
+static const fp_t PLAYER_MAX_SPEED      = FLOAT_TO_FP(1.0);   // Max velocity magnitude (60 px/sec across 128px screen)
 static const fp_t PLAYER_INERTIA        = FLOAT_TO_FP(0.85);  // Velocity blend factor (0-1)
                                                                 // High = more drift
 // Player hitbox size in pixels (used for collision detection)
@@ -221,12 +232,13 @@ static const uint8_t FOOD_ICECREAM_SLOW_INTENSITY = 60;  // -60% speed
 //   bhSpeed increases by BH_SPEED_INCREMENT every frame.
 //   Use physics.h moveToward() helper.
 
-static const fp_t BH_BASE_SPEED       = FLOAT_TO_FP(0.3);  // Initial chase speed
-static const fp_t BH_SPEED_INCREMENT  = 1;                  // Speed increase per frame
-                                                             // (tiny! Q8.8: 1/256 per frame)
-static const fp_t BH_MASS             = FLOAT_TO_FP(1.0);   // Gravity pull strength (fixed)
-static const fp_t BH_BASE_CHARGE      = INT_TO_FP(30);      // Initial attraction radius (pixels)
-static const fp_t BH_CHARGE_INCREMENT = 1;                   // Charge increase per frame
+static const fp_t BH_BASE_SPEED          = FLOAT_TO_FP(0.20);  // Initial chase speed (~12 px/sec)
+static const fp_t BH_SPEED_INCREMENT     = 1;                  // Speed increase step in Q8.8 (1/256)
+static const uint8_t BH_SPEED_RAMP_INTERVAL  = 120;             // Frames between speed increases (~2 sec)
+static const fp_t BH_MASS                = FLOAT_TO_FP(1.0);   // Gravity pull strength (fixed)
+static const fp_t BH_BASE_CHARGE         = INT_TO_FP(30);      // Initial attraction radius (pixels)
+static const fp_t BH_CHARGE_INCREMENT    = 1;                  // Charge increase step in Q8.8
+static const uint8_t BH_CHARGE_RAMP_INTERVAL = 120;            // Frames between charge increases (~2 sec)
 
 // Blackhole visual size (pixels) — concentric circles, larger than entities
 static const uint8_t BH_RENDER_RADIUS = 8;

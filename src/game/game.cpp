@@ -33,16 +33,16 @@ void Game::init(HalStorage& storage) {
 // =============================================================================
 // update() — Per-frame dispatch
 // =============================================================================
-void Game::update(HalInput& input) {
+void Game::update(HalInput& input, fp_t dt) {
     switch (state) {
         case STATE_TITLE:
-            updateTitle(input);
+            updateTitle(input, dt);
             break;
         case STATE_PLAYING:
-            updatePlaying(input);
+            updatePlaying(input, dt);
             break;
         case STATE_GAMEOVER:
-            updateGameOver(input);
+            updateGameOver(input, dt);
             break;
     }
 }
@@ -78,8 +78,12 @@ void Game::reset() {
 // STATE: TITLE
 // =============================================================================
 
-void Game::updateTitle(HalInput& input) {
-    world.bhSpin++;
+void Game::updateTitle(HalInput& input, fp_t dt) {
+    world.timeAccum += dt;
+    while (world.timeAccum >= FP_DT_ONE) {
+        world.timeAccum -= FP_DT_ONE;
+        world.bhSpin++;
+    }
     if (input.justPressed(BTN_A)) {
         reset();
         state = STATE_PLAYING;
@@ -91,7 +95,8 @@ void Game::renderTitle(HalRenderer& renderer) {
     renderer.drawSelfMasked(0, 0, title_screen_sprite, 0);
 
     // 2. Animated swirling whitehole at bottom-right (x=92, y=30)
-    uint8_t frame = (world.bhSpin / 4) % WHITEHOLE_FRAME_COUNT;
+    // Slower, majestic rotation using WHITEHOLE_ANIM_DIVISOR
+    uint8_t frame = (world.bhSpin / WHITEHOLE_ANIM_DIVISOR) % WHITEHOLE_FRAME_COUNT;
     renderer.drawSelfMasked(TITLE_WHITEHOLE_X, TITLE_WHITEHOLE_Y, whitehole_sprite, frame);
 
     // 3. High score in the open bottom-left area (smaller standard font per user request)
@@ -107,7 +112,7 @@ void Game::renderTitle(HalRenderer& renderer) {
 // STATE: PLAYING
 // =============================================================================
 
-void Game::updatePlaying(HalInput& input) {
+void Game::updatePlaying(HalInput& input, fp_t dt) {
     // 1. Read input
     bool up    = input.pressed(BTN_UP);
     bool down  = input.pressed(BTN_DOWN);
@@ -116,11 +121,11 @@ void Game::updatePlaying(HalInput& input) {
     bool accel = input.pressed(BTN_A);
     bool brake = input.pressed(BTN_B);
 
-    // 2. Update player movement
-    player.update(up, down, left, right, accel, brake);
+    // 2. Update player movement with delta time
+    player.update(up, down, left, right, accel, brake, dt);
 
-    // 3. Update world (camera, blackhole, difficulty, timers)
-    world.update(player.x, player.y);
+    // 3. Update world (camera, blackhole, difficulty, timers) with delta time
+    world.update(player.x, player.y, dt);
 
     // 4. Spawn entities
     // TODO(M2): Implement entity spawning
@@ -198,7 +203,8 @@ void Game::renderPlaying(HalRenderer& renderer) {
 // STATE: GAME OVER
 // =============================================================================
 
-void Game::updateGameOver(HalInput& input) {
+void Game::updateGameOver(HalInput& input, fp_t dt) {
+    (void)dt;
     if (input.justPressed(BTN_A)) {
         state = STATE_TITLE;
     } else if (input.justPressed(BTN_B)) {
@@ -315,8 +321,8 @@ void Game::renderPlayer(HalRenderer& renderer) {
     int16_t sx = SCREEN_W / 2;
     int16_t sy = SCREEN_H / 2;
 
-    // Visual feedback for slow debuff: blink
-    if (!player.isSlowed() || ((player.slowTimer / 4) % 2 == 0)) {
+    // Visual feedback for slow debuff: blink (slower cadence)
+    if (!player.isSlowed() || ((player.slowTimer / PLAYER_BLINK_DIVISOR) % 2 == 0)) {
         renderer.drawSelfMasked(sx - (PLAYER_SPRITE_WIDTH / 2),
                                 sy - (PLAYER_SPRITE_HEIGHT / 2),
                                 player_sprite, 0);
@@ -333,8 +339,8 @@ void Game::renderBlackhole(HalRenderer& renderer) {
         return;
     }
 
-    // Animate swirling whitehole frames based on bhSpin
-    uint8_t frame = (world.bhSpin / 4) % WHITEHOLE_FRAME_COUNT;
+    // Animate swirling whitehole frames based on bhSpin (slower, majestic)
+    uint8_t frame = (world.bhSpin / WHITEHOLE_ANIM_DIVISOR) % WHITEHOLE_FRAME_COUNT;
     renderer.drawSelfMasked(sx - (WHITEHOLE_SPRITE_WIDTH / 2),
                             sy - (WHITEHOLE_SPRITE_HEIGHT / 2),
                             whitehole_sprite, frame);

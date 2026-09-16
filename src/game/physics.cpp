@@ -61,7 +61,7 @@ fp32_t approxDistance(fp32_t x0, fp32_t y0, fp32_t x1, fp32_t y1) {
 // -----------------------------------------------------------------------------
 void moveToward(fp32_t& x, fp32_t& y,
                 fp32_t targetX, fp32_t targetY,
-                fp_t speed) {
+                fp_t speed, fp_t dt) {
     fp32_t dist = approxDistance(x, y, targetX, targetY);
 
     // If already at target (or very close), don't move
@@ -71,12 +71,15 @@ void moveToward(fp32_t& x, fp32_t& y,
     fp32_t dx = targetX - x;
     fp32_t dy = targetY - y;
 
-    // Normalize and scale by speed:
-    //   moveX = dx * speed / dist
-    //   moveY = dy * speed / dist
+    // Effective speed scaled by delta time
+    fp_t effSpeed = FP_MUL(speed, dt);
+
+    // Normalize and scale by effective speed:
+    //   moveX = dx * effSpeed / dist
+    //   moveY = dy * effSpeed / dist
     // Use 32-bit intermediate to prevent overflow
-    fp32_t moveX = (dx * (fp32_t)speed) / dist;
-    fp32_t moveY = (dy * (fp32_t)speed) / dist;
+    fp32_t moveX = (dx * (fp32_t)effSpeed) / dist;
+    fp32_t moveY = (dy * (fp32_t)effSpeed) / dist;
 
     x += moveX;
     y += moveY;
@@ -87,7 +90,8 @@ void moveToward(fp32_t& x, fp32_t& y,
 // -----------------------------------------------------------------------------
 void applyBlackholeGravity(fp32_t& entityX, fp32_t& entityY,
                             fp32_t bhX, fp32_t bhY,
-                            fp_t mass, fp32_t chargeRadius) {
+                            fp_t mass, fp32_t chargeRadius,
+                            fp_t dt) {
     fp32_t dist = approxDistance(entityX, entityY, bhX, bhY);
 
     // Only affect entities within the charge radius
@@ -102,13 +106,10 @@ void applyBlackholeGravity(fp32_t& entityX, fp32_t& entityY,
     fp32_t dx = bhX - entityX;
     fp32_t dy = bhY - entityY;
 
-    // Apply pull: entity moves toward blackhole
-    //   moveX = dx * mass * pullFactor / (dist * chargeRadius)
-    // Simplified to avoid overflow:
-    //   moveX = dx * mass / dist * pullFactor / chargeRadius
-    // Further simplified (mass is small Q8.8, pullFactor/chargeRadius < 1):
-    fp32_t moveX = (dx * (fp32_t)mass) / dist;
-    fp32_t moveY = (dy * (fp32_t)mass) / dist;
+    // Apply pull: entity moves toward blackhole scaled by dt
+    fp_t effMass = FP_MUL(mass, dt);
+    fp32_t moveX = (dx * (fp32_t)effMass) / dist;
+    fp32_t moveY = (dy * (fp32_t)effMass) / dist;
 
     // Scale by pullFactor / chargeRadius (linear falloff)
     moveX = (moveX * pullFactor) / chargeRadius;

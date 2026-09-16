@@ -108,7 +108,7 @@ public:
     //   STATE_TITLE:    wait for A press → start game
     //   STATE_PLAYING:  full gameplay update (see updatePlaying)
     //   STATE_GAMEOVER: wait for A (title) or B (retry)
-    void update(HalInput& input);
+    void update(HalInput& input, fp_t dt = FP_DT_ONE);
 
     // =========================================================================
     // render(renderer) — Per-frame rendering
@@ -142,7 +142,7 @@ private:
     // =========================================================================
     // Checks for A button press to start the game.
     // On A press: reset() → state = STATE_PLAYING
-    void updateTitle(HalInput& input);
+    void updateTitle(HalInput& input, fp_t dt = FP_DT_ONE);
 
     // =========================================================================
     // updatePlaying(input) — Main gameplay update
@@ -197,15 +197,15 @@ private:
     //        state = STATE_GAMEOVER
     //        if (score > highScore): highScore = score; storageRef->saveHighScore(score)
     //
-    void updatePlaying(HalInput& input);
+    void updatePlaying(HalInput& input, fp_t dt = FP_DT_ONE);
 
     // =========================================================================
-    // updateGameOver(input) — Game over screen update
+    // updateGameOver(input, dt) — Game over screen update
     // =========================================================================
     // Checks for button presses:
     //   A button: go back to title (state = STATE_TITLE)
     //   B button: retry immediately (reset() + state = STATE_PLAYING)
-    void updateGameOver(HalInput& input);
+    void updateGameOver(HalInput& input, fp_t dt = FP_DT_ONE);
 
     // ---- State-specific render handlers ----
 

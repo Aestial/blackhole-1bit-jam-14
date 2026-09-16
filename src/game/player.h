@@ -96,6 +96,7 @@ struct Player {
     // ---- Food slow debuff ----
     uint8_t slowTimer;      // Frames remaining of slow effect (0 = not slowed)
     uint8_t slowIntensity;  // Speed reduction percentage (0-100) during slow
+    fp_t    slowTimerAccum;  // Fractional accumulator for delta-time
 
     // ---- Hitbox (pixels) ----
     uint8_t width;   // = PLAYER_WIDTH  (10)
@@ -113,20 +114,11 @@ struct Player {
     void init();
 
     // =========================================================================
-    // update(up, down, left, right, accel, brake) — Per-frame movement update
+    // update(up, down, left, right, accel, brake, dt) — Update movement & physics
     // =========================================================================
-    // THE most important function in the game. This implements the hybrid
-    // inertia control model described above.
+    // Call every frame from Game::updatePlaying().
     //
-    // Parameters (all booleans from Input::pressed()):
-    //   up    — D-pad UP is held
-    //   down  — D-pad DOWN is held
-    //   left  — D-pad LEFT is held
-    //   right — D-pad RIGHT is held
-    //   accel — A button is held (accelerate)
-    //   brake — B button is held (brake)
-    //
-    // Algorithm (implement in this order):
+    // HYBRID INERTIA ALGORITHM:
     //   1. Set desiredDx/desiredDy from directional booleans:
     //      desiredDx = (right ? 1 : 0) - (left ? 1 : 0)
     //      desiredDy = (down  ? 1 : 0) - (up   ? 1 : 0)
@@ -167,7 +159,7 @@ struct Player {
     //      x += vx   (fp32_t += fp_t is safe, widening conversion)
     //      y += vy
     //
-    void update(bool up, bool down, bool left, bool right, bool accel, bool brake);
+    void update(bool up, bool down, bool left, bool right, bool accel, bool brake, fp_t dt = FP_DT_ONE);
 
     // =========================================================================
     // applyFoodSlow(foodType) — Apply a food slow debuff

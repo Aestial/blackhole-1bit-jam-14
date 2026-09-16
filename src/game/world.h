@@ -106,6 +106,7 @@ struct World {
     uint8_t  spawnTimer;    // Frames until next entity spawn
     uint8_t  spawnInterval; // Current frames between spawns (decreases over time)
     uint16_t scoreTimer;    // Frames until next passive score tick
+    fp_t     timeAccum;     // Fractional accumulator for delta-time
 
     // =========================================================================
     // init() — Reset world state for a new game
@@ -128,46 +129,15 @@ struct World {
     void init();
 
     // =========================================================================
-    // update(playerX, playerY) — Per-frame world update
+    // update(playerX, playerY, dt) — Per-frame world update
     // =========================================================================
     // Called once per frame during STATE_PLAYING.
     //
     // Parameters:
     //   playerX, playerY — Current player world position (for camera + blackhole tracking)
+    //   dt               — Normalized delta-time in Q8.8 (default = FP_DT_ONE)
     //
-    // This function does the following (implement in this order):
-    //
-    //   1. UPDATE CAMERA:
-    //      camX = playerX    (camera directly follows player)
-    //      camY = playerY
-    //      (Optional M5: add camera smoothing/lerp for polish)
-    //
-    //   2. UPDATE BLACKHOLE POSITION:
-    //      Use physics::moveToward(bhX, bhY, playerX, playerY, bhSpeed)
-    //      to move the blackhole toward the player.
-    //
-    //   3. UPDATE BLACKHOLE SPIN (cosmetic):
-    //      bhSpin++   (wraps naturally at 255 for uint8_t)
-    //
-    //   4. RAMP DIFFICULTY (linear):
-    //      bhSpeed += BH_SPEED_INCREMENT   (gets faster)
-    //      bhCharge += BH_CHARGE_INCREMENT (gravity reaches farther)
-    //      Every SPAWN_RAMP_INTERVAL frames:
-    //        if (spawnInterval > SPAWN_MIN_INTERVAL) spawnInterval--
-    //
-    //   5. UPDATE SPAWN TIMER:
-    //      spawnTimer--
-    //      (Spawning itself is handled by Game::updatePlaying, which
-    //       checks shouldSpawn() and calls entityManager.spawn())
-    //
-    //   6. INCREMENT GAME TIME:
-    //      gameTime++
-    //
-    //   7. UPDATE SCORE TIMER:
-    //      scoreTimer--
-    //      (Score increment is handled by Game::updatePlaying)
-    //
-    void update(fp32_t playerX, fp32_t playerY);
+    void update(fp32_t playerX, fp32_t playerY, fp_t dt = FP_DT_ONE);
 
     // =========================================================================
     // shouldSpawn() — Check if it's time to spawn a new entity

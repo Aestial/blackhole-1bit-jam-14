@@ -45,6 +45,8 @@ ArduboyInput input(arduboy);       // Input HAL → wraps Arduboy2 button calls
 ArduboyStorage storage;            // Storage HAL → wraps EEPROM
 Game game;                         // The game itself
 
+uint32_t lastMillis = 0;
+
 // =============================================================================
 // setup() — Called once at power-on / reset
 // =============================================================================
@@ -52,6 +54,7 @@ void setup() {
   arduboy.begin();
   arduboy.setFrameRate(TARGET_FPS);
   game.init(storage);
+  lastMillis = millis();
 }
 
 // =============================================================================
@@ -62,11 +65,23 @@ void loop() {
   if (!arduboy.nextFrame())
     return;
 
+  // Compute wall-clock delta-time normalized to 60 FPS (16.67ms = FP_DT_ONE = 256)
+  uint32_t currentMillis = millis();
+  uint32_t elapsedMillis = currentMillis - lastMillis;
+  lastMillis = currentMillis;
+
+  // Clamp to sane range [1, 100] ms to guard against pauses or initial startup
+  if (elapsedMillis == 0) elapsedMillis = 1;
+  if (elapsedMillis > 100) elapsedMillis = 100;
+
+  // Normalized Q8.8 dt: (elapsedMillis / 1000.0) * 60.0 * 256 = (elapsedMillis * 384) / 25
+  fp_t dt = (fp_t)(((uint32_t)elapsedMillis * 384) / 25);
+
   // 1. Poll button state (must be before any input checks)
   input.poll();
 
-  // 2. Update game logic
-  game.update(input);
+  // 2. Update game logic with delta-time
+  game.update(input, dt);
 
   // 3. Render
   renderer.clear();
