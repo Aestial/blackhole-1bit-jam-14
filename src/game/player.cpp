@@ -33,6 +33,8 @@ void Player::init() {
     slowTimer = 0;
     slowIntensity = 0;
     slowTimerAccum = 0;
+    boostTimer = 0;
+    boostTimerAccum = 0;
     width = PLAYER_WIDTH;
     height = PLAYER_HEIGHT;
 }
@@ -45,17 +47,30 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
     desiredDx = (right ? 1 : 0) - (left ? 1 : 0);
     desiredDy = (down  ? 1 : 0) - (up   ? 1 : 0);
 
-    // 2. Determine effective max speed (adjusted for food slow debuff)
+    // 2. Determine effective max speed & acceleration (adjusted for boost or food slow)
     fp_t maxSpd = PLAYER_MAX_SPEED;
-    if (slowTimer > 0) {
-        maxSpd = (fp_t)((int32_t)maxSpd * (100 - slowIntensity) / 100);
-        slowTimerAccum += dt;
-        while (slowTimerAccum >= FP_DT_ONE && slowTimer > 0) {
-            slowTimerAccum -= FP_DT_ONE;
-            slowTimer--;
+    fp_t accelVal = PLAYER_ACCEL;
+
+    if (boostTimer > 0) {
+        maxSpd = FP_MUL(maxSpd, POWERUP_COFFEE_SPEED_BOOST);
+        accelVal = FP_MUL(accelVal, POWERUP_COFFEE_ACCEL_BOOST);
+        boostTimerAccum += dt;
+        while (boostTimerAccum >= FP_DT_ONE && boostTimer > 0) {
+            boostTimerAccum -= FP_DT_ONE;
+            boostTimer--;
         }
     } else {
-        slowTimerAccum = 0;
+        boostTimerAccum = 0;
+        if (slowTimer > 0) {
+            maxSpd = (fp_t)((int32_t)maxSpd * (100 - slowIntensity) / 100);
+            slowTimerAccum += dt;
+            while (slowTimerAccum >= FP_DT_ONE && slowTimer > 0) {
+                slowTimerAccum -= FP_DT_ONE;
+                slowTimer--;
+            }
+        } else {
+            slowTimerAccum = 0;
+        }
     }
 
     // 3. Directional thrust & inertia blending
@@ -80,7 +95,7 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
         vy = FP_MUL(vy, blend) + FP_MUL(targetVy, FP_ONE - blend);
 
         // Direct acceleration step scaled by delta-time
-        fp_t thrustStep = FP_MUL(PLAYER_ACCEL, dt);
+        fp_t thrustStep = FP_MUL(accelVal, dt);
         vx += FP_MUL(dirX, thrustStep);
         vy += FP_MUL(dirY, thrustStep);
     }
@@ -123,13 +138,29 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
 // -----------------------------------------------------------------------------
 void Player::applyFoodSlow(EntityType foodType) {
     switch (foodType) {
+        case ENTITY_FOOD_APPLE:
+            slowTimer = FOOD_APPLE_SLOW_DURATION;
+            slowIntensity = FOOD_APPLE_SLOW_INTENSITY;
+            break;
         case ENTITY_FOOD_PIZZA:
             slowTimer = FOOD_PIZZA_SLOW_DURATION;
             slowIntensity = FOOD_PIZZA_SLOW_INTENSITY;
             break;
+        case ENTITY_FOOD_TACO:
+            slowTimer = FOOD_TACO_SLOW_DURATION;
+            slowIntensity = FOOD_TACO_SLOW_INTENSITY;
+            break;
         case ENTITY_FOOD_BURGER:
             slowTimer = FOOD_BURGER_SLOW_DURATION;
             slowIntensity = FOOD_BURGER_SLOW_INTENSITY;
+            break;
+        case ENTITY_FOOD_FRIES:
+            slowTimer = FOOD_FRIES_SLOW_DURATION;
+            slowIntensity = FOOD_FRIES_SLOW_INTENSITY;
+            break;
+        case ENTITY_FOOD_CAKE:
+            slowTimer = FOOD_CAKE_SLOW_DURATION;
+            slowIntensity = FOOD_CAKE_SLOW_INTENSITY;
             break;
         case ENTITY_FOOD_DONUT:
             slowTimer = FOOD_DONUT_SLOW_DURATION;
@@ -146,8 +177,26 @@ void Player::applyFoodSlow(EntityType foodType) {
 }
 
 // -----------------------------------------------------------------------------
+// Player::applyCoffeeBoost()
+// -----------------------------------------------------------------------------
+void Player::applyCoffeeBoost() {
+    boostTimer = POWERUP_COFFEE_DURATION;
+    boostTimerAccum = 0;
+    // Coffee cleanses any active food slow debuff!
+    slowTimer = 0;
+    slowTimerAccum = 0;
+}
+
+// -----------------------------------------------------------------------------
 // Player::isSlowed()
 // -----------------------------------------------------------------------------
 bool Player::isSlowed() const {
     return slowTimer > 0;
+}
+
+// -----------------------------------------------------------------------------
+// Player::isBoosted()
+// -----------------------------------------------------------------------------
+bool Player::isBoosted() const {
+    return boostTimer > 0;
 }

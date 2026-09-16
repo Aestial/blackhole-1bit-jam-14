@@ -107,6 +107,13 @@ struct World {
     uint8_t  spawnInterval; // Current frames between spawns (decreases over time)
     uint16_t scoreTimer;    // Frames until next passive score tick
     fp_t     timeAccum;     // Fractional accumulator for delta-time
+    uint16_t rngState;      // Deterministic 16-bit PRNG state for entity spawning
+
+    // =========================================================================
+    // nextRandom() / randomRange() — Fast 16-bit pseudo-random generator
+    // =========================================================================
+    uint16_t nextRandom();
+    uint16_t randomRange(uint16_t minVal, uint16_t maxVal);
 
     // =========================================================================
     // init() — Reset world state for a new game

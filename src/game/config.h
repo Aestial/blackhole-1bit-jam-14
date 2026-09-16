@@ -172,40 +172,60 @@ static const int16_t PLAYER_START_OFFSET = 60;
 
 static const uint8_t MAX_ENTITIES = 12;
 
-// Entity sizes (pixels) — used for both rendering and collision hitboxes
-static const uint8_t FOOD_PIZZA_SIZE      = 6;   // Rendered as triangle
-static const uint8_t FOOD_BURGER_SIZE     = 6;   // Rendered as filled square
-static const uint8_t FOOD_DONUT_SIZE      = 4;   // Rendered as small circle
-static const uint8_t FOOD_ICECREAM_SIZE   = 6;   // Rendered as ice cream cone
-static const uint8_t COLLECTIBLE_SIZE     = 4;   // Rendered as diamond / gem
+// Entity sizes (pixels) — used for collision hitboxes (centered within 16x16 sprites)
+// Food hazards have slightly forgiving hitboxes (8px) for near-miss excitement.
+// Collectibles & power-ups have generous hitboxes (10px) for satisfying pickups.
+static const uint8_t FOOD_APPLE_SIZE       = 8;
+static const uint8_t FOOD_PIZZA_SIZE       = 8;
+static const uint8_t FOOD_TACO_SIZE        = 8;
+static const uint8_t FOOD_BURGER_SIZE      = 8;
+static const uint8_t FOOD_FRIES_SIZE       = 8;
+static const uint8_t FOOD_CAKE_SIZE        = 8;
+static const uint8_t FOOD_DONUT_SIZE       = 8;
+static const uint8_t FOOD_ICECREAM_SIZE    = 8;
+static const uint8_t COLLECTIBLE_SIZE      = 10;
+static const uint8_t POWERUP_COFFEE_SIZE   = 10;
 
 // =============================================================================
-// FOOD SLOWDOWN CONSTANTS
+// POWER-UP CONSTANTS
+// =============================================================================
+// Coffee provides an instant caffeine rush: cleanses food slows and grants
+// a speed and acceleration burst for 3 seconds (180 frames at 60 FPS).
+static const uint8_t POWERUP_COFFEE_DURATION    = 180;                 // ~3.0 sec
+static const fp_t    POWERUP_COFFEE_SPEED_BOOST = FLOAT_TO_FP(1.35);  // +35% max speed
+static const fp_t    POWERUP_COFFEE_ACCEL_BOOST = FLOAT_TO_FP(1.50);  // +50% acceleration
+
+// =============================================================================
+// FOOD SLOWDOWN CONSTANTS (8 DISTINCT HAZARDS)
 // =============================================================================
 // When the fat man touches food, he's temporarily slowed.
 // Duration is in frames (at 60 FPS): 30 frames = 0.5 seconds.
-// Intensity is a percentage of speed REDUCTION (0-100):
-//   0   = no slow
-//   50  = half speed
-//   100 = full stop (don't use — feels unfair)
+// Intensity is a percentage of speed REDUCTION (0-100).
 //
-// Design intent:
-//   Pizza    = light snack, barely slows you
-//   Burger   = heavier meal, noticeable
-//   Donut    = irresistible, significant slow
-//   IceCream = brain freeze, heavy slow
+// Diverse hazards ranging from quick snacks to heavy feasts:
+static const uint8_t FOOD_APPLE_SLOW_DURATION     = 24;   // ~0.4 sec
+static const uint8_t FOOD_APPLE_SLOW_INTENSITY    = 10;   // -10% speed
 
-static const uint8_t FOOD_PIZZA_SLOW_DURATION    = 30;   // ~0.5 sec
+static const uint8_t FOOD_PIZZA_SLOW_DURATION     = 30;   // ~0.5 sec
 static const uint8_t FOOD_PIZZA_SLOW_INTENSITY    = 15;   // -15% speed
 
-static const uint8_t FOOD_BURGER_SLOW_DURATION   = 60;   // ~1.0 sec
-static const uint8_t FOOD_BURGER_SLOW_INTENSITY   = 30;   // -30% speed
+static const uint8_t FOOD_TACO_SLOW_DURATION      = 45;   // ~0.75 sec
+static const uint8_t FOOD_TACO_SLOW_INTENSITY     = 25;   // -25% speed
 
-static const uint8_t FOOD_DONUT_SLOW_DURATION    = 90;   // ~1.5 sec
-static const uint8_t FOOD_DONUT_SLOW_INTENSITY    = 50;   // -50% speed
+static const uint8_t FOOD_BURGER_SLOW_DURATION    = 60;   // ~1.0 sec
+static const uint8_t FOOD_BURGER_SLOW_INTENSITY    = 30;   // -30% speed
 
-static const uint8_t FOOD_ICECREAM_SLOW_DURATION = 120;  // ~2.0 sec (Brain freeze!)
-static const uint8_t FOOD_ICECREAM_SLOW_INTENSITY = 60;  // -60% speed
+static const uint8_t FOOD_FRIES_SLOW_DURATION     = 75;   // ~1.25 sec
+static const uint8_t FOOD_FRIES_SLOW_INTENSITY     = 35;   // -35% speed
+
+static const uint8_t FOOD_CAKE_SLOW_DURATION      = 105;  // ~1.75 sec
+static const uint8_t FOOD_CAKE_SLOW_INTENSITY     = 45;   // -45% speed
+
+static const uint8_t FOOD_DONUT_SLOW_DURATION     = 90;   // ~1.5 sec
+static const uint8_t FOOD_DONUT_SLOW_INTENSITY     = 50;   // -50% speed
+
+static const uint8_t FOOD_ICECREAM_SLOW_DURATION  = 120;  // ~2.0 sec (Brain freeze!)
+static const uint8_t FOOD_ICECREAM_SLOW_INTENSITY = 60;   // -60% speed
 
 // =============================================================================
 // BLACKHOLE CONSTANTS
@@ -259,19 +279,23 @@ static const int16_t BH_START_DISTANCE = 80;
 //   Spawn interval decreases by 1 every SPAWN_RAMP_INTERVAL frames,
 //   down to SPAWN_MIN_INTERVAL.
 
-static const uint8_t SPAWN_INTERVAL_START   = 90;   // Frames between spawns (initial)
-static const uint8_t SPAWN_MIN_INTERVAL     = 20;   // Minimum spawn interval
-static const uint8_t SPAWN_RAMP_INTERVAL    = 120;  // Frames between spawn rate increases
-static const uint8_t SPAWN_RADIUS           = 80;   // Max distance from player to spawn
-static const uint8_t SPAWN_MIN_DISTANCE     = 30;   // Min distance from player to spawn
-static const uint8_t DESPAWN_DISTANCE       = 120;  // Distance from camera edge to despawn
+static const uint8_t SPAWN_INTERVAL_START   = 180;  // Frames between spawns (initial ~3 sec for clean readability)
+static const uint8_t SPAWN_MIN_INTERVAL     = 60;   // Minimum spawn interval (~1.0 sec)
+static const uint8_t SPAWN_RAMP_INTERVAL    = 240;  // Frames between spawn rate increases (~4 sec)
+static const uint8_t SPAWN_RADIUS           = 120;  // Max distance from player to spawn (generous spread)
+static const uint8_t SPAWN_MIN_DISTANCE     = 55;   // Min distance from player to spawn (well ahead)
+static const uint8_t MIN_ITEM_SEPARATION    = 45;   // Minimum world distance between any two items
+static const uint8_t DESPAWN_DISTANCE       = 130;  // Distance from camera edge to despawn
 
 // =============================================================================
 // SCORING
 // =============================================================================
 // Points for collectibles and passive survival time.
 
-static const uint8_t SCORE_PER_COLLECTIBLE = 10;  // Points per collected item
+static const uint8_t SCORE_PER_DIAMOND     = 10;  // Diamond gem (+10 points)
+static const uint8_t SCORE_PER_BILLS       = 25;  // Stack of dollar bills (+25 points)
+static const uint8_t SCORE_PER_COLLECTIBLE = 10;  // Default / fallback
+static const uint8_t COMBO_MAX             = 4;   // Max score multiplier from streaks (1x..4x)
 static const uint8_t SCORE_TIME_INTERVAL   = 60;  // Frames between passive score ticks
 static const uint8_t SCORE_PER_TICK        = 1;   // Points per time tick
 

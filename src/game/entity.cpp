@@ -31,17 +31,21 @@ void Entity::reset() {
 // Entity::isFood()
 // -----------------------------------------------------------------------------
 bool Entity::isFood() const {
-    return (type == ENTITY_FOOD_PIZZA ||
-            type == ENTITY_FOOD_BURGER ||
-            type == ENTITY_FOOD_DONUT ||
-            type == ENTITY_FOOD_ICECREAM);
+    return (type >= ENTITY_FOOD_APPLE && type <= ENTITY_FOOD_ICECREAM);
 }
 
 // -----------------------------------------------------------------------------
 // Entity::isCollectible()
 // -----------------------------------------------------------------------------
 bool Entity::isCollectible() const {
-    return (type == ENTITY_COLLECTIBLE);
+    return (type == ENTITY_COLLECTIBLE_DIAMOND || type == ENTITY_COLLECTIBLE_BILLS);
+}
+
+// -----------------------------------------------------------------------------
+// Entity::isPowerup()
+// -----------------------------------------------------------------------------
+bool Entity::isPowerup() const {
+    return (type == ENTITY_POWERUP_COFFEE);
 }
 
 // -----------------------------------------------------------------------------
@@ -55,45 +59,35 @@ void EntityManager::init() {
 
 // -----------------------------------------------------------------------------
 // EntityManager::spawn()
-// TODO(M2): Implement — find first inactive slot, set type/pos/size, activate
 // -----------------------------------------------------------------------------
 bool EntityManager::spawn(EntityType type, fp32_t worldX, fp32_t worldY) {
-    // 1. Loop through entities[] to find first slot where type == ENTITY_NONE
-    // 2. If found:
-    //    a. Set entity.type = type
-    //    b. Set entity.x = worldX, entity.y = worldY
-    //    c. Set entity.active = true
-    //    d. Set width/height based on type
-    //    e. Return true
-    // 3. If no slot found, return false (pool full — silently drop spawn)
-
     for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
-        if (entities[i].type == ENTITY_NONE) {
+        if (!entities[i].active || entities[i].type == ENTITY_NONE) {
             entities[i].type = type;
             entities[i].x = worldX;
             entities[i].y = worldY;
             entities[i].active = true;
 
             switch (type) {
-                case ENTITY_FOOD_PIZZA:
-                    entities[i].width = FOOD_PIZZA_SIZE;
-                    entities[i].height = FOOD_PIZZA_SIZE;
-                    break;
-                case ENTITY_FOOD_BURGER:
-                    entities[i].width = FOOD_BURGER_SIZE;
-                    entities[i].height = FOOD_BURGER_SIZE;
-                    break;
-                case ENTITY_FOOD_DONUT:
-                    entities[i].width = FOOD_DONUT_SIZE;
-                    entities[i].height = FOOD_DONUT_SIZE;
-                    break;
-                case ENTITY_FOOD_ICECREAM:
-                    entities[i].width = FOOD_ICECREAM_SIZE;
-                    entities[i].height = FOOD_ICECREAM_SIZE;
-                    break;
-                case ENTITY_COLLECTIBLE:
+                case ENTITY_COLLECTIBLE_DIAMOND:
+                case ENTITY_COLLECTIBLE_BILLS:
                     entities[i].width = COLLECTIBLE_SIZE;
                     entities[i].height = COLLECTIBLE_SIZE;
+                    break;
+                case ENTITY_POWERUP_COFFEE:
+                    entities[i].width = POWERUP_COFFEE_SIZE;
+                    entities[i].height = POWERUP_COFFEE_SIZE;
+                    break;
+                case ENTITY_FOOD_APPLE:
+                case ENTITY_FOOD_PIZZA:
+                case ENTITY_FOOD_TACO:
+                case ENTITY_FOOD_BURGER:
+                case ENTITY_FOOD_FRIES:
+                case ENTITY_FOOD_CAKE:
+                case ENTITY_FOOD_DONUT:
+                case ENTITY_FOOD_ICECREAM:
+                    entities[i].width = 8;
+                    entities[i].height = 8;
                     break;
                 default:
                     entities[i].reset();

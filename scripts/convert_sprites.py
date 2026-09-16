@@ -291,7 +291,7 @@ static const uint8_t ITEM_SPRITE_HEIGHT    = 16;
 //   4: Donut          5: Bottle        6: Apple         7: Sushi
 //   8: Ice Cream
 // Row 1:
-//   9: Fries         10: Taco         11: Soda Can     12: Gem / Collectible
+//   9: Fries         10: Taco         11: Dollar Bills 12: Diamond
 //  13: Cake          14: Sandwich     15: Cherry       16: Candy
 //  17: Star
 
@@ -300,11 +300,18 @@ static const uint8_t SPRITE_ITEM_CROISSANT   = 1;
 static const uint8_t SPRITE_ITEM_BURGER      = 2;
 static const uint8_t SPRITE_ITEM_PIZZA       = 3;
 static const uint8_t SPRITE_ITEM_DONUT       = 4;
+static const uint8_t SPRITE_ITEM_BOTTLE      = 5;
 static const uint8_t SPRITE_ITEM_APPLE       = 6;
+static const uint8_t SPRITE_ITEM_SUSHI       = 7;
 static const uint8_t SPRITE_ITEM_ICECREAM    = 8;
 static const uint8_t SPRITE_ITEM_FRIES       = 9;
 static const uint8_t SPRITE_ITEM_TACO        = 10;
+static const uint8_t SPRITE_ITEM_BILLS       = 11;
+static const uint8_t SPRITE_ITEM_DIAMOND     = 12;
 static const uint8_t SPRITE_ITEM_COLLECTIBLE = 12;
+static const uint8_t SPRITE_ITEM_CAKE        = 13;
+static const uint8_t SPRITE_ITEM_SANDWICH    = 14;
+static const uint8_t SPRITE_ITEM_CHERRY      = 15;
 static const uint8_t SPRITE_ITEM_CANDY       = 16;
 static const uint8_t SPRITE_ITEM_STAR        = 17;
 

@@ -83,6 +83,7 @@ public:
     GameState state;
     uint16_t score;
     uint16_t highScore;
+    uint8_t  comboMultiplier;
 
     // =========================================================================
     // init(storage) — One-time initialization

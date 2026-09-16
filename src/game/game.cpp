@@ -28,6 +28,7 @@ void Game::init(HalStorage& storage) {
     highScore = storage.loadHighScore();
     state = STATE_TITLE;
     score = 0;
+    comboMultiplier = 1;
 }
 
 // =============================================================================
@@ -72,6 +73,12 @@ void Game::reset() {
     world.init();
     entities.init();
     score = 0;
+    comboMultiplier = 1;
+
+    // Pre-populate 2 spacious, distant items across the plane
+    // Far enough apart (>60px) and well clear of the HUD and whitehole
+    entities.spawn(ENTITY_COLLECTIBLE_DIAMOND, player.x + INT_TO_FP32(15), player.y - INT_TO_FP32(25));
+    entities.spawn(ENTITY_FOOD_PIZZA, player.x - INT_TO_FP32(35), player.y - INT_TO_FP32(60));
 }
 
 // =============================================================================
@@ -128,13 +135,70 @@ void Game::updatePlaying(HalInput& input, fp_t dt) {
     world.update(player.x, player.y, dt);
 
     // 4. Spawn entities
-    // TODO(M2): Implement entity spawning
-    //   if (world.shouldSpawn()) {
-    //     // Choose random type: 60% food (equal split), 40% collectible
-    //     // Choose random position: SPAWN_MIN_DISTANCE to SPAWN_RADIUS from player
-    //     // entities.spawn(type, worldX, worldY);
-    //     world.resetSpawnTimer();
-    //   }
+    if (world.shouldSpawn()) {
+        // Roll for entity type:
+        //   30% Diamond (+10 pts)
+        //   10% Dollar Bills (+25 pts)
+        //   15% Coffee powerup (speed boost + cleanse)
+        //   45% Food hazards (split evenly across 8 food hazards)
+        uint16_t roll = world.randomRange(0, 99);
+        EntityType spawnType;
+        if (roll < 30) {
+            spawnType = ENTITY_COLLECTIBLE_DIAMOND;
+        } else if (roll < 40) {
+            spawnType = ENTITY_COLLECTIBLE_BILLS;
+        } else if (roll < 55) {
+            spawnType = ENTITY_POWERUP_COFFEE;
+        } else {
+            // Food hazards (8 distinct types: APPLE through ICECREAM)
+            uint8_t foodRoll = world.randomRange(0, 7);
+            spawnType = (EntityType)(ENTITY_FOOD_APPLE + foodRoll);
+        }
+
+        // Try candidate positions enforcing MIN_ITEM_SEPARATION
+        for (uint8_t attempt = 0; attempt < 4; attempt++) {
+            // Spawn position: in a ring around the player (SPAWN_MIN_DISTANCE to SPAWN_RADIUS)
+            int16_t dist = (int16_t)world.randomRange(SPAWN_MIN_DISTANCE, SPAWN_RADIUS);
+            int16_t dx = (int16_t)world.randomRange(0, dist);
+            int16_t dy = dist - dx;
+            if (world.nextRandom() & 1) dx = -dx;
+            if (world.nextRandom() & 1) dy = -dy;
+
+            // Bias 60% of spawns ahead in the player's movement direction
+            if ((player.vx != 0 || player.vy != 0) && (world.nextRandom() % 5 < 3)) {
+                if (player.vx > 0 && dx < 0) dx = -dx;
+                if (player.vx < 0 && dx > 0) dx = -dx;
+                if (player.vy > 0 && dy < 0) dy = -dy;
+                if (player.vy < 0 && dy > 0) dy = -dy;
+            }
+
+            fp32_t wx = player.x + INT_TO_FP32(dx);
+            fp32_t wy = player.y + INT_TO_FP32(dy);
+
+            // Guard: do not spawn right inside the blackhole core
+            if (approxDistance(wx, wy, world.bhX, world.bhY) <= INT_TO_FP32(25)) {
+                continue;
+            }
+
+            // Check separation against all existing active entities
+            bool tooClose = false;
+            for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
+                if (entities.entities[i].active) {
+                    if (approxDistance(wx, wy, entities.entities[i].x, entities.entities[i].y) < INT_TO_FP32(MIN_ITEM_SEPARATION)) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!tooClose) {
+                entities.spawn(spawnType, wx, wy);
+                break;
+            }
+        }
+
+        world.resetSpawnTimer();
+    }
 
     // 5. Apply blackhole gravity to entities
     // TODO(M3): Uncomment when ready
@@ -147,28 +211,37 @@ void Game::updatePlaying(HalInput& input, fp_t dt) {
     //   }
 
     // 6. Check player-entity collisions
-    // TODO(M2): Implement collision responses
-    //   for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
-    //     if (!entities.entities[i].active) continue;
-    //     Entity& e = entities.entities[i];
-    //     if (checkOverlap(player.x, player.y, player.width, player.height,
-    //                       e.x, e.y, e.width, e.height)) {
-    //       if (e.isFood()) {
-    //         player.applyFoodSlow(e.type);
-    //       } else if (e.isCollectible()) {
-    //         score += SCORE_PER_COLLECTIBLE;
-    //       }
-    //       entities.despawn(i);
-    //     }
-    //   }
+    for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
+        if (!entities.entities[i].active) continue;
+        Entity& e = entities.entities[i];
+        if (checkOverlap(player.x, player.y, player.width, player.height,
+                          e.x, e.y, e.width, e.height)) {
+            if (e.isFood()) {
+                player.applyFoodSlow(e.type);
+                comboMultiplier = 1; // Food hazard interrupts combo streak
+            } else if (e.isCollectible()) {
+                uint8_t baseScore = (e.type == ENTITY_COLLECTIBLE_BILLS) ? SCORE_PER_BILLS : SCORE_PER_DIAMOND;
+                score += (uint16_t)baseScore * comboMultiplier;
+                if (comboMultiplier < COMBO_MAX) {
+                    comboMultiplier++;
+                }
+            } else if (e.isPowerup()) {
+                player.applyCoffeeBoost();
+                // Power-up also rewards combo streak
+                if (comboMultiplier < COMBO_MAX) {
+                    comboMultiplier++;
+                }
+            }
+            entities.despawn(i);
+        }
+    }
 
     // 7. Despawn far entities
-    // TODO(M2): Implement despawning
-    //   for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
-    //     if (entities.entities[i].active && world.isTooFar(entities.entities[i].x, entities.entities[i].y)) {
-    //       entities.despawn(i);
-    //     }
-    //   }
+    for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
+        if (entities.entities[i].active && world.isTooFar(entities.entities[i].x, entities.entities[i].y)) {
+            entities.despawn(i);
+        }
+    }
 
     // 8. Passive score
     if (world.shouldScoreTick()) {
@@ -293,11 +366,23 @@ void Game::renderEntities(HalRenderer& renderer) {
 
         uint8_t frame = 0;
         switch (e.type) {
+            case ENTITY_FOOD_APPLE:
+                frame = SPRITE_ITEM_APPLE;
+                break;
             case ENTITY_FOOD_PIZZA:
                 frame = SPRITE_ITEM_PIZZA;
                 break;
+            case ENTITY_FOOD_TACO:
+                frame = SPRITE_ITEM_TACO;
+                break;
             case ENTITY_FOOD_BURGER:
                 frame = SPRITE_ITEM_BURGER;
+                break;
+            case ENTITY_FOOD_FRIES:
+                frame = SPRITE_ITEM_FRIES;
+                break;
+            case ENTITY_FOOD_CAKE:
+                frame = SPRITE_ITEM_CAKE;
                 break;
             case ENTITY_FOOD_DONUT:
                 frame = SPRITE_ITEM_DONUT;
@@ -305,8 +390,14 @@ void Game::renderEntities(HalRenderer& renderer) {
             case ENTITY_FOOD_ICECREAM:
                 frame = SPRITE_ITEM_ICECREAM;
                 break;
-            case ENTITY_COLLECTIBLE:
-                frame = SPRITE_ITEM_COLLECTIBLE;
+            case ENTITY_COLLECTIBLE_DIAMOND:
+                frame = SPRITE_ITEM_DIAMOND;
+                break;
+            case ENTITY_COLLECTIBLE_BILLS:
+                frame = SPRITE_ITEM_BILLS;
+                break;
+            case ENTITY_POWERUP_COFFEE:
+                frame = SPRITE_ITEM_COFFEE;
                 break;
             default:
                 continue;
@@ -322,6 +413,17 @@ void Game::renderPlayer(HalRenderer& renderer) {
     // Player position on perspective ground plane
     int16_t sx = world.worldToScreenX(player.x, player.y);
     int16_t sy = world.worldToScreenY(player.y);
+
+    // Speed boost visual effect: motion trail particles behind movement vector
+    if (player.isBoosted() && (player.vx != 0 || player.vy != 0)) {
+        int16_t trailX = sx - FP_TO_INT(player.vx * 3);
+        int16_t trailY = sy - FP_TO_INT(player.vy * 3);
+        if ((world.gameTime % 2) == 0) {
+            renderer.drawPixel(trailX - 2, trailY, COLOR_WHITE);
+            renderer.drawPixel(trailX + 2, trailY, COLOR_WHITE);
+            renderer.drawPixel(trailX, trailY - 2, COLOR_WHITE);
+        }
+    }
 
     // Visual feedback for slow debuff: blink (slower cadence)
     if (!player.isSlowed() || ((player.slowTimer / PLAYER_BLINK_DIVISOR) % 2 == 0)) {
@@ -352,7 +454,7 @@ void Game::renderBlackhole(HalRenderer& renderer) {
 void Game::renderHUD(HalRenderer& renderer) {
     // Configurable HUD position with black backing for readability over grid
     static const uint8_t HUD_PAD   = 2;    // Padding from screen edge
-    static const uint8_t HUD_BG_W  = 40;   // Background width (covers ~5 digits)
+    static const uint8_t HUD_BG_W  = 42;   // Background width (fits score + combo multiplier)
     static const uint8_t HUD_BG_H  = 12;   // Background height (font 8px + 4px padding)
 
     int16_t hudX, hudY;
@@ -372,6 +474,14 @@ void Game::renderHUD(HalRenderer& renderer) {
     // Draw score text centered vertically within the box
     renderer.setCursor(hudX + 3, hudY + 2);
     renderer.printNumber(score);
+
+    // Show combo multiplier or boost indicator
+    if (comboMultiplier > 1) {
+        renderer.print("x");
+        renderer.printNumber(comboMultiplier);
+    } else if (player.isBoosted()) {
+        renderer.print(" !");
+    }
 }
 
 // =============================================================================

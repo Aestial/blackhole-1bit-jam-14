@@ -39,16 +39,26 @@ The blackhole tracks the player's position at a speed that linearly increases ov
 | Donut | Circle | 1.5 sec | −50% speed |
 
 ### Collectibles & Scoring
-- Diamond-shaped collectibles spawn on the plane (+10 points each)
+- **Diamond Gem**: Faceted gemstone (+10 points base * combo multiplier)
+- **Dollar Bills**: Stack of cash with `$` glyph (+25 points base * combo multiplier)
+- Streak combo multiplier: consecutive diamond/bills/power-up collections without hitting food increase multiplier (1x..4x), awarding up to +100 points per item
 - Passive score: +1 point per second survived
 - High score persisted to EEPROM
+
+### Power-Ups
+- **Coffee Mug**: Grants +35% turbo speed and +50% acceleration burst for 3 seconds (180 frames) and cleanses any active food slow debuff immediately.
+
+### Spacing & Item Density
+- Generous spawn interval (initial 180 frames / ~3.0s, down to 60 frames / ~1.0s)
+- Guaranteed `MIN_ITEM_SEPARATION` of 45 world units between all items to prevent clutter and ensure readability at high flight speeds
+- Spawns placed well ahead in a 55–120px ring with directional movement bias
 
 ### Infinite Plane
 - Camera follows player
 - Pseudo-3D perspective ground grid fills the entire 128×64 screen
 - Vanishing point placed above the screen (y=-10) for dramatic perspective convergence
 - No visible horizon line — objects recede toward the top of the screen and scroll off naturally
-- Entities spawn around the player, despawn when far off-screen
+- Zero-allocation static object pool (12 entities max) for spawning and despawning
 
 ---
 
@@ -56,8 +66,8 @@ The blackhole tracks the player's position at a speed that linearly increases ov
 
 ```
 TITLE → (Press A) → PLAYING → (Blackhole catches player) → GAME OVER
-                                                              ↓ A → TITLE
-                                                              ↓ B → PLAYING (retry)
+                                                             ↓ A → TITLE
+                                                             ↓ B → PLAYING (retry)
 ```
 
 ---
@@ -65,7 +75,8 @@ TITLE → (Press A) → PLAYING → (Blackhole catches player) → GAME OVER
 ## Difficulty Curve (Linear)
 - Blackhole speed: increases by 1/256 per frame
 - Blackhole charge (gravity radius): increases by 1/256 per frame
-- Spawn interval: decreases by 1 frame every 2 seconds, min 20 frames
+- Spawn interval: decreases by 1 frame every 4 seconds, min 60 frames
+- Future (M3): Whitehole absorbs money and food, increasing mass and charge!
 
 ---
 
@@ -83,12 +94,19 @@ TITLE → (Press A) → PLAYING → (Blackhole catches player) → GAME OVER
 1-bit (black and white) using dedicated PROGMEM bitmap sprites:
 - **Player**: 16x16 pixel character (`player_static.png`) with slow-debuff blinking
 - **Whitehole**: 32x32 animated swirling celestial hazard (4 frames, `whitehole_32.png`)
-- **Food**: 16x16 sprites (`items_16.png`):
-  - Pizza (light slow, -15%)
-  - Burger (medium slow, -30%)
-  - Donut (heavy slow, -50%)
-  - Ice Cream (brain freeze, -60%)
-- **Collectible**: 16x16 Gem / Crystal (`items_16.png`, +score)
+- **Collectibles (Money)** (`items_16.png`):
+  - **Diamond**: 16x16 faceted gem (Frame 12, +10 pts)
+  - **Dollar Bills**: 16x16 bill stack with `$` (Frame 11, +25 pts)
+- **Power-Up**: 16x16 Coffee Mug (`items_16.png`, Frame 0, +speed & cleanse)
+- **Food Hazards (8 Distinct Types)** (`items_16.png`):
+  - **Apple**: Snack (Frame 6, -10% speed for 0.4s)
+  - **Pizza**: Light (Frame 3, -15% speed for 0.5s)
+  - **Taco**: Spicy (Frame 10, -25% speed for 0.75s)
+  - **Burger**: Medium (Frame 2, -30% speed for 1.0s)
+  - **French Fries**: Salty (Frame 9, -35% speed for 1.25s)
+  - **Cake**: Sugar crash (Frame 13, -45% speed for 1.75s)
+  - **Donut**: Heavy (Frame 4, -50% speed for 1.5s)
+  - **Ice Cream**: Brain freeze (Frame 8, -60% speed for 2.0s)
 
 ---
 
@@ -97,7 +115,7 @@ TITLE → (Press A) → PLAYING → (Blackhole catches player) → GAME OVER
 |-------|-------------|--------|
 | M0 | Project scaffold, architecture, HAL interfaces | ✅ Complete |
 | M1 | Player movement with hybrid inertia physics, perspective ground grid | ✅ Complete |
-| M2 | Entity spawning, collision detection, scoring | 📋 Planned |
+| M2 | Entity spawning, object pool, collision detection, power-ups, scoring | ✅ Complete |
 | M3 | Blackhole chase, gravity pull, difficulty ramp | 📋 Planned |
 | M4 | Polished UI (title, game over, HUD), converging grid | 📋 Planned |
 | M5 | Real sprites, visual effects, audio | 📋 Planned |

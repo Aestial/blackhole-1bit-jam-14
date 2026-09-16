@@ -54,12 +54,23 @@
 // The uint8_t underlying type keeps each entity small.
 
 enum EntityType : uint8_t {
-    ENTITY_NONE          = 0,  // Inactive / empty slot — available for reuse
-    ENTITY_FOOD_PIZZA    = 1,  // Triangle shape. Slow: 30 frames, -15% speed
-    ENTITY_FOOD_BURGER   = 2,  // Square shape.   Slow: 60 frames, -30% speed
-    ENTITY_FOOD_DONUT    = 3,  // Circle shape.   Slow: 90 frames, -50% speed
-    ENTITY_COLLECTIBLE   = 4,  // Diamond shape.  Score: +SCORE_PER_COLLECTIBLE
-    ENTITY_FOOD_ICECREAM = 5   // Cone shape.     Slow: 120 frames, -60% speed (Brain freeze!)
+    ENTITY_NONE                 = 0,  // Inactive / empty slot — available for reuse
+    // Money / Collectibles (Diamond + Bills)
+    ENTITY_COLLECTIBLE_DIAMOND  = 1,  // Faceted Diamond (+10 pts * combo)
+    ENTITY_COLLECTIBLE_BILLS    = 2,  // Dollar Bills stack (+25 pts * combo)
+    // Power-ups
+    ENTITY_POWERUP_COFFEE       = 3,  // Coffee mug (Turbo speed + cleanse for 3s)
+    // 8 Distinct Food Hazards (from items_16.png)
+    ENTITY_FOOD_APPLE           = 4,  // Apple (Snack: 24 frames, -10% speed)
+    ENTITY_FOOD_PIZZA           = 5,  // Pizza slice (Light: 30 frames, -15% speed)
+    ENTITY_FOOD_TACO            = 6,  // Taco (Spicy: 45 frames, -25% speed)
+    ENTITY_FOOD_BURGER          = 7,  // Burger (Medium: 60 frames, -30% speed)
+    ENTITY_FOOD_FRIES           = 8,  // French fries (Salty: 75 frames, -35% speed)
+    ENTITY_FOOD_CAKE            = 9,  // Cake (Sugar crash: 105 frames, -45% speed)
+    ENTITY_FOOD_DONUT           = 10, // Donut (Heavy: 90 frames, -50% speed)
+    ENTITY_FOOD_ICECREAM        = 11, // Ice Cream (Brain freeze: 120 frames, -60% speed)
+    // Alias for backwards compatibility
+    ENTITY_COLLECTIBLE          = 1
 };
 
 // =============================================================================
@@ -99,6 +110,11 @@ struct Entity {
     // isCollectible() — Returns true if this entity is a collectible
     // -------------------------------------------------------------------------
     bool isCollectible() const;
+
+    // -------------------------------------------------------------------------
+    // isPowerup() — Returns true if this entity is a positive power-up
+    // -------------------------------------------------------------------------
+    bool isPowerup() const;
 };
 
 // =============================================================================

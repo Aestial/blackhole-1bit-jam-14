@@ -33,6 +33,7 @@ void World::init() {
     spawnInterval = SPAWN_INTERVAL_START;
     scoreTimer = SCORE_TIME_INTERVAL;
     timeAccum = 0;
+    rngState = 0xACE1u;
 }
 
 // -----------------------------------------------------------------------------
@@ -159,12 +160,40 @@ bool World::isOnScreen(fp32_t worldX, fp32_t worldY, uint8_t w, uint8_t h) const
 // World::isTooFar()
 // -----------------------------------------------------------------------------
 bool World::isTooFar(fp32_t worldX, fp32_t worldY) const {
+    // Fast world distance check: if more than 140 world units away, despawn
+    fp32_t dist = approxDistance(worldX, worldY, camX, camY);
+    if (dist > INT_TO_FP32(140)) {
+        return true;
+    }
+
     int16_t sx = worldToScreenX(worldX, worldY);
     int16_t sy = worldToScreenY(worldY);
 
-    // Entity is "too far" if it's more than DESPAWN_DISTANCE from any screen edge
+    // Entity is also "too far" if it's more than DESPAWN_DISTANCE from any screen edge
     return (sx < -(int16_t)DESPAWN_DISTANCE ||
             sx > (int16_t)(SCREEN_W + DESPAWN_DISTANCE) ||
             sy < -(int16_t)DESPAWN_DISTANCE ||
             sy > (int16_t)(SCREEN_H + DESPAWN_DISTANCE));
+}
+
+// -----------------------------------------------------------------------------
+// World::nextRandom()
+// -----------------------------------------------------------------------------
+uint16_t World::nextRandom() {
+    // 16-bit Galois LFSR with polynomial x^16 + x^14 + x^13 + x^11 + 1
+    uint16_t lsb = rngState & 1u;
+    rngState >>= 1;
+    if (lsb) {
+        rngState ^= 0xB400u;
+    }
+    return rngState;
+}
+
+// -----------------------------------------------------------------------------
+// World::randomRange()
+// -----------------------------------------------------------------------------
+uint16_t World::randomRange(uint16_t minVal, uint16_t maxVal) {
+    if (maxVal <= minVal) return minVal;
+    uint16_t span = (maxVal - minVal) + 1;
+    return minVal + (nextRandom() % span);
 }

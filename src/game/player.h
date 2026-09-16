@@ -98,6 +98,10 @@ struct Player {
     uint8_t slowIntensity;  // Speed reduction percentage (0-100) during slow
     fp_t    slowTimerAccum;  // Fractional accumulator for delta-time
 
+    // ---- Coffee speed boost power-up ----
+    uint8_t boostTimer;      // Frames remaining of speed boost (0 = not boosted)
+    fp_t    boostTimerAccum;  // Fractional accumulator for delta-time
+
     // ---- Hitbox (pixels) ----
     uint8_t width;   // = PLAYER_WIDTH  (10)
     uint8_t height;  // = PLAYER_HEIGHT (10)
@@ -170,19 +174,26 @@ struct Player {
     //
     // Parameters:
     //   foodType — The EntityType of the food that was touched.
-    //
-    // Behavior by type (constants from config.h):
-    //   ENTITY_FOOD_PIZZA:  timer=30,  intensity=15  (light, brief)
-    //   ENTITY_FOOD_BURGER: timer=60,  intensity=30  (medium)
-    //   ENTITY_FOOD_DONUT:  timer=90,  intensity=50  (heavy, long)
-    //   Other types: do nothing (shouldn't be called with non-food)
     void applyFoodSlow(EntityType foodType);
+
+    // =========================================================================
+    // applyCoffeeBoost() — Apply a speed boost power-up and cleanse debuffs
+    // =========================================================================
+    // Grants turbo speed (+35%) and increased acceleration for POWERUP_COFFEE_DURATION.
+    // Immediately clears any active food slow debuff.
+    void applyCoffeeBoost();
 
     // =========================================================================
     // isSlowed() — Check if player is currently under food slow debuff
     // =========================================================================
     // Returns: true if slowTimer > 0
     bool isSlowed() const;
+
+    // =========================================================================
+    // isBoosted() — Check if player is currently under coffee boost power-up
+    // =========================================================================
+    // Returns: true if boostTimer > 0
+    bool isBoosted() const;
 };
 
 #endif // PLAYER_H
