@@ -338,6 +338,12 @@ private:
     // Optional: small icon or bar indicating food slow status
     // Optional: distance indicator to blackhole
     void renderHUD(HalRenderer& renderer);
+
+    // ---- Title screen font rendering helpers ----
+    void drawTitleChar(HalRenderer& renderer, int16_t x, int16_t y, char c);
+    void drawTitleText(HalRenderer& renderer, int16_t x, int16_t y, const char* str);
+    uint8_t getTitleCharWidth(char c) const;
+    uint16_t getTitleTextWidth(const char* str) const;
 };
 
 #endif // GAME_H

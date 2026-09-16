@@ -82,6 +82,8 @@ def main():
     whitehole_png = os.path.join(ASSETS_DIR, "whitehole_32.png")
     items_png = os.path.join(ASSETS_DIR, "items_16.png")
 
+    title_png = os.path.join(ASSETS_DIR, "title_screen.png")
+
     if not all(os.path.isfile(p) for p in [player_png, whitehole_png, items_png]):
         print("Error: Missing expected PNG files in assets/", file=sys.stderr)
         sys.exit(1)
@@ -100,6 +102,151 @@ def main():
     items_img = Image.open(items_png)
     it_frames, it_bytes = image_to_arduboy_bytes(items_img, 16, 16)
     print(f"  Items: {it_frames} items (16x16), {len(it_bytes)} bytes")
+
+    # 4. Title Screen (if present)
+    has_title = os.path.isfile(title_png)
+    t_bytes = []
+    if has_title:
+        title_img = Image.open(title_png).convert("RGBA")
+        # Blank out the static whitehole (x=92..127, y=30..63) so the animated
+        # whitehole_sprite can be drawn dynamically over the background.
+        for y in range(30, 64):
+            for x in range(92, 128):
+                title_img.putpixel((x, y), (0, 0, 0, 255))
+        t_frames, t_bytes = image_to_arduboy_bytes(title_img, 128, 64)
+        print(f"  Title Screen (whitehole blanked for animation): {t_frames} frame(s), {len(t_bytes)} bytes")
+
+    # 5. Title Font (custom bold pixel font matching title artwork)
+    FONT_GLYPHS = {}
+    # Uppercase
+    FONT_GLYPHS["A"] = [".#####.", "##...##", "##...##", "#######", "##...##", "##...##", "##...##", "......."]
+    FONT_GLYPHS["B"] = ["######.", "##...##", "##...##", "######.", "##...##", "##...##", "######.", "......."]
+    FONT_GLYPHS["C"] = [".#####.", "##...##", "##.....", "##.....", "##.....", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["D"] = ["######.", "##...##", "##...##", "##...##", "##...##", "##...##", "######.", "......."]
+    FONT_GLYPHS["E"] = ["#######", "##.....", "##.....", "######.", "##.....", "##.....", "#######", "......."]
+    FONT_GLYPHS["F"] = ["#######", "##.....", "##.....", "######.", "##.....", "##.....", "##.....", "......."]
+    FONT_GLYPHS["G"] = [".#####.", "##...##", "##.....", "##.####", "##...##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["H"] = ["##...##", "##...##", "##...##", "#######", "##...##", "##...##", "##...##", "......."]
+    FONT_GLYPHS["I"] = ["######.", "..##...", "..##...", "..##...", "..##...", "..##...", "######.", "......."]
+    FONT_GLYPHS["J"] = ["....##.", "....##.", "....##.", "....##.", "##..##.", "##..##.", ".####..", "......."]
+    FONT_GLYPHS["K"] = ["##...##", "##..##.", "##.##..", "####...", "##.##..", "##..##.", "##...##", "......."]
+    FONT_GLYPHS["L"] = ["##.....", "##.....", "##.....", "##.....", "##.....", "##.....", "#######", "......."]
+    FONT_GLYPHS["M"] = ["##...##", "###.###", "#######", "##.#.##", "##.#.##", "##...##", "##...##", "......."]
+    FONT_GLYPHS["N"] = ["##...##", "###..##", "####.##", "##.####", "##..###", "##...##", "##...##", "......."]
+    FONT_GLYPHS["O"] = [".#####.", "##...##", "##...##", "##...##", "##...##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["P"] = ["######.", "##...##", "##...##", "######.", "##.....", "##.....", "##.....", "......."]
+    FONT_GLYPHS["Q"] = [".#####.", "##...##", "##...##", "##...##", "##.#.##", "##..###", ".#####.", "......."]
+    FONT_GLYPHS["R"] = ["######.", "##...##", "##...##", "######.", "##.##..", "##..##.", "##...##", "......."]
+    FONT_GLYPHS["S"] = [".#####.", "##...##", "##.....", ".#####.", ".....##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["T"] = ["#######", "...##..", "...##..", "...##..", "...##..", "...##..", "...##..", "......."]
+    FONT_GLYPHS["U"] = ["##...##", "##...##", "##...##", "##...##", "##...##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["V"] = ["##...##", "##...##", "##...##", ".##.##.", ".##.##.", "..###..", "...#...", "......."]
+    FONT_GLYPHS["W"] = ["##.#.##", "##.#.##", "##.#.##", "##.#.##", "#######", "###.###", ".#...#.", "......."]
+    FONT_GLYPHS["X"] = ["##...##", ".##.##.", "..###..", "...#...", "..###..", ".##.##.", "##...##", "......."]
+    FONT_GLYPHS["Y"] = ["##...##", ".##.##.", "..###..", "...##..", "...##..", "...##..", "...##..", "......."]
+    FONT_GLYPHS["Z"] = ["#######", ".....##", "....##.", "...##..", "..##...", ".##....", "#######", "......."]
+    # Lowercase
+    FONT_GLYPHS["a"] = [".......", ".......", ".#####.", ".....##", ".######", "##...##", ".######", "......."]
+    FONT_GLYPHS["b"] = ["##.....", "##.....", "######.", "##...##", "##...##", "##...##", "######.", "......."]
+    FONT_GLYPHS["c"] = [".......", ".......", ".#####.", "##...##", "##.....", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["d"] = [".....##", ".....##", ".######", "##...##", "##...##", "##...##", ".######", "......."]
+    FONT_GLYPHS["e"] = [".......", ".......", ".#####.", "##...##", "#######", "##.....", ".#####.", "......."]
+    FONT_GLYPHS["f"] = ["..####.", "..##...", "######.", "..##...", "..##...", "..##...", "..##...", "......."]
+    FONT_GLYPHS["g"] = [".......", ".......", ".#####.", "##...##", "##...##", ".######", ".....##", ".#####."]
+    FONT_GLYPHS["h"] = ["##.....", "##.....", "######.", "##...##", "##...##", "##...##", "##...##", "......."]
+    FONT_GLYPHS["i"] = ["..##..", "......", ".###..", "..##..", "..##..", "..##..", "######", "......"]
+    FONT_GLYPHS["j"] = ["....##.", ".......", "...###.", "....##.", "....##.", "##..##.", ".####..", "......."]
+    FONT_GLYPHS["k"] = ["##.....", "##.....", "##..##.", "##.##..", "####...", "##.##..", "##..##.", "......."]
+    FONT_GLYPHS["l"] = [".###..", "..##..", "..##..", "..##..", "..##..", "..##..", "######", "......"]
+    FONT_GLYPHS["m"] = [".......", ".......", "######.", "##.#.##", "##.#.##", "##...##", "##...##", "......."]
+    FONT_GLYPHS["n"] = [".......", ".......", "######.", "##...##", "##...##", "##...##", "##...##", "......."]
+    FONT_GLYPHS["o"] = [".......", ".......", ".#####.", "##...##", "##...##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["p"] = [".......", ".......", "######.", "##...##", "##...##", "######.", "##.....", "##....."]
+    FONT_GLYPHS["q"] = [".......", ".......", ".######", "##...##", "##...##", ".######", ".....##", ".....##"]
+    FONT_GLYPHS["r"] = ["......", "......", "##.###", "###...", "##....", "##....", "##....", "......"]
+    FONT_GLYPHS["s"] = [".......", ".......", ".#####.", "##.....", ".#####.", ".....##", "######.", "......."]
+    FONT_GLYPHS["t"] = ["..##..", "..##..", "######", "..##..", "..##..", "..##..", "..##..", "......"]
+    FONT_GLYPHS["u"] = [".......", ".......", "##...##", "##...##", "##...##", "##...##", ".######", "......."]
+    FONT_GLYPHS["v"] = [".......", ".......", "##...##", "##...##", "##...##", ".##.##.", "..###..", "......."]
+    FONT_GLYPHS["w"] = [".......", ".......", "##...##", "##...##", "#######", "###.###", ".#...#.", "......."]
+    FONT_GLYPHS["x"] = [".......", ".......", "##...##", ".##.##.", "..###..", ".##.##.", "##...##", "......."]
+    FONT_GLYPHS["y"] = [".......", ".......", "##...##", "##...##", ".######", ".....##", ".#####.", "##...##"]
+    FONT_GLYPHS["z"] = [".......", ".......", "#######", "....##.", "...##..", "..##...", "#######", "......."]
+    # Digits
+    FONT_GLYPHS["0"] = [".#####.", "##...##", "##...##", "##...##", "##...##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["1"] = ["..###..", ".####..", "...##..", "...##..", "...##..", "...##..", ".######", "......."]
+    FONT_GLYPHS["2"] = [".#####.", "##...##", ".....##", ".#####.", "##.....", "##.....", "#######", "......."]
+    FONT_GLYPHS["3"] = [".#####.", "##...##", ".....##", "..####.", ".....##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["4"] = ["##...##", "##...##", "##...##", "#######", ".....##", ".....##", ".....##", "......."]
+    FONT_GLYPHS["5"] = ["#######", "##.....", "######.", ".....##", ".....##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["6"] = [".#####.", "##...##", "##.....", "######.", "##...##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["7"] = ["#######", ".....##", "....##.", "...##..", "..##...", "..##...", "..##...", "......."]
+    FONT_GLYPHS["8"] = [".#####.", "##...##", "##...##", ".#####.", "##...##", "##...##", ".#####.", "......."]
+    FONT_GLYPHS["9"] = [".#####.", "##...##", "##...##", ".######", ".....##", "##...##", ".#####.", "......."]
+    # Symbols
+    FONT_GLYPHS[":"] = ["...", "...", "##.", "##.", "...", "##.", "##.", "..."]
+    FONT_GLYPHS[" "] = ["...", "...", "...", "...", "...", "...", "...", "..."]
+    FONT_GLYPHS["-"] = ["....", "....", "....", "####", "....", "....", "....", "...."]
+    FONT_GLYPHS["!"] = [".##.", ".##.", ".##.", ".##.", "....", ".##.", ".##.", "...."]
+
+    sorted_chars = sorted(FONT_GLYPHS.keys())
+    char_to_idx = {c: i for i, c in enumerate(sorted_chars)}
+
+    glyph_lines = []
+    glyph_lines.append("const TitleFontGlyph title_font_glyphs[] PROGMEM = {")
+    for ch in sorted_chars:
+        rows = FONT_GLYPHS[ch]
+        gw = len(rows[0])
+        col_bytes = []
+        for c in range(gw):
+            b = 0
+            for r in range(8):
+                if rows[r][c] == "#":
+                    b |= (1 << r)
+            col_bytes.append(b)
+        while len(col_bytes) < 7:
+            col_bytes.append(0)
+        hex_strs = [f"0x{b:02x}" for b in col_bytes]
+        safe_char = "\\\x27" if ch == "\x27" else ("\\\\" if ch == "\\" else ch)
+        glyph_lines.append(f"  {{ {gw}, {{ {', '.join(hex_strs)} }} }}, // \x27{safe_char}\x27")
+    glyph_lines.append("};")
+
+    map_lines = []
+    map_lines.append("const uint8_t title_font_map[] PROGMEM = {")
+    map_indices = []
+    for code in range(32, 123):
+        ch = chr(code)
+        idx = char_to_idx.get(ch, 255)
+        map_indices.append(f"{idx:3d}")
+    for i in range(0, len(map_indices), 16):
+        map_lines.append("  " + ", ".join(map_indices[i:i+16]) + ",")
+    map_lines.append("};")
+
+    font_definitions = "\n".join(glyph_lines) + "\n\n" + "\n".join(map_lines)
+
+    title_constants = ""
+    title_array = ""
+    if has_title:
+        title_constants = """static const uint8_t TITLE_SCREEN_WIDTH     = 128;
+static const uint8_t TITLE_SCREEN_HEIGHT    = 64;
+static const uint8_t TITLE_WHITEHOLE_X      = 92;
+static const uint8_t TITLE_WHITEHOLE_Y      = 30;
+static const uint8_t TITLE_FONT_ASCII_MIN   = 32;
+static const uint8_t TITLE_FONT_ASCII_MAX   = 122;
+
+struct TitleFontGlyph {
+    uint8_t width;
+    uint8_t cols[7];
+};
+"""
+        title_array = f"""// Title Screen — 128x64 cover image (whitehole region blanked for animation)
+{format_c_array("title_screen_sprite", t_bytes)}
+
+// =============================================================================
+// TITLE FONT — Bold 7-pixel pixel font matching cover title typography
+// =============================================================================
+{font_definitions}
+"""
 
     header_content = f"""// =============================================================================
 // sprites.h — Supermassive Whitehole PROGMEM Sprites
@@ -135,6 +282,7 @@ static const uint8_t WHITEHOLE_FRAME_COUNT   = 4;
 static const uint8_t ITEM_SPRITE_WIDTH     = 16;
 static const uint8_t ITEM_SPRITE_HEIGHT    = 16;
 
+{title_constants}
 // =============================================================================
 // ITEM SPRITESHEET FRAME INDICES (items_16.png — 9 cols x 2 rows = 18 items)
 // =============================================================================
@@ -173,13 +321,14 @@ static const uint8_t SPRITE_ITEM_STAR        = 17;
 // Items — 16x16 spritesheet (18 items)
 {format_c_array("items_sprites", it_bytes)}
 
+{title_array}
 #endif // SPRITES_H
 """
 
     with open(OUTPUT_HEADER, "w") as f:
         f.write(header_content)
 
-    total_bytes = len(p_bytes) + len(wh_bytes) + len(it_bytes)
+    total_bytes = len(p_bytes) + len(wh_bytes) + len(it_bytes) + len(t_bytes)
     print(f"Successfully generated {OUTPUT_HEADER} ({total_bytes} bytes in Flash)")
 
 

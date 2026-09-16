@@ -79,6 +79,7 @@ void Game::reset() {
 // =============================================================================
 
 void Game::updateTitle(HalInput& input) {
+    world.bhSpin++;
     if (input.justPressed(BTN_A)) {
         reset();
         state = STATE_PLAYING;
@@ -86,25 +87,20 @@ void Game::updateTitle(HalInput& input) {
 }
 
 void Game::renderTitle(HalRenderer& renderer) {
-    // TODO(M4): Fancy title screen with blackhole animation
-    // For now: simple text display
+    // 1. Full-screen cover image (128x64) with static whitehole blanked
+    renderer.drawSelfMasked(0, 0, title_screen_sprite, 0);
 
-    // "SUPERMASSIVE" — 12 chars × 6px = 72px wide → x = (128-72)/2 = 28
-    renderer.setCursor(28, 8);
-    renderer.print("SUPERMASSIVE");
+    // 2. Animated swirling whitehole at bottom-right (x=92, y=30)
+    uint8_t frame = (world.bhSpin / 4) % WHITEHOLE_FRAME_COUNT;
+    renderer.drawSelfMasked(TITLE_WHITEHOLE_X, TITLE_WHITEHOLE_Y, whitehole_sprite, frame);
 
-    // "WHITEHOLE" — 9 chars × 6px = 54px wide → x = (128-54)/2 = 37
-    renderer.setCursor(37, 20);
-    renderer.print("WHITEHOLE");
-
-    // High score
-    renderer.setCursor(28, 36);
-    renderer.print("High:");
+    // 3. High score in the open bottom-left area (smaller standard font per user request)
+    renderer.setCursor(6, 38);
+    renderer.print("High: ");
     renderer.printNumber(highScore);
 
-    // "Press A" — 7 chars × 6px = 42px → x = (128-42)/2 = 43
-    renderer.setCursor(43, 52);
-    renderer.print("Press A");
+    // 4. "Press A" prompt in the open bottom-left area (custom bold title font)
+    drawTitleText(renderer, 6, 50, "Press A");
 }
 
 // =============================================================================
@@ -355,4 +351,61 @@ void Game::renderHUD(HalRenderer& renderer) {
     // STUB: Score in top-right, no background
     renderer.setCursor(SCREEN_W - 36, 0);
     renderer.printNumber(score);
+}
+
+// =============================================================================
+// TITLE FONT HELPERS
+// =============================================================================
+
+uint8_t Game::getTitleCharWidth(char c) const {
+    if (c < TITLE_FONT_ASCII_MIN || c > TITLE_FONT_ASCII_MAX) {
+        return 4; // default space width
+    }
+    uint8_t idx = pgm_read_byte(&title_font_map[c - TITLE_FONT_ASCII_MIN]);
+    if (idx == 255) return 4;
+    const uint8_t* glyph_ptr = (const uint8_t*)&title_font_glyphs[idx];
+    return pgm_read_byte(glyph_ptr);
+}
+
+uint16_t Game::getTitleTextWidth(const char* str) const {
+    uint16_t w = 0;
+    while (*str) {
+        w += getTitleCharWidth(*str++);
+        if (*str) w += 1; // 1px spacing between chars
+    }
+    return w;
+}
+
+void Game::drawTitleChar(HalRenderer& renderer, int16_t x, int16_t y, char c) {
+    if (c < TITLE_FONT_ASCII_MIN || c > TITLE_FONT_ASCII_MAX) return;
+    uint8_t idx = pgm_read_byte(&title_font_map[c - TITLE_FONT_ASCII_MIN]);
+    if (idx == 255) return;
+
+    const uint8_t* glyph_ptr = (const uint8_t*)&title_font_glyphs[idx];
+    uint8_t width = pgm_read_byte(glyph_ptr);
+    const uint8_t* cols = glyph_ptr + 1;
+
+    for (uint8_t col = 0; col < width; col++) {
+        uint8_t b = pgm_read_byte(cols + col);
+        int16_t px = x + col;
+        if (px < 0 || px >= SCREEN_W) continue;
+        for (uint8_t bit = 0; bit < 8; bit++) {
+            if (b & (1 << bit)) {
+                int16_t py = y + bit;
+                if (py >= 0 && py < SCREEN_H) {
+                    renderer.drawPixel(px, py, COLOR_WHITE);
+                }
+            }
+        }
+    }
+}
+
+void Game::drawTitleText(HalRenderer& renderer, int16_t x, int16_t y, const char* str) {
+    int16_t cur_x = x;
+    while (*str) {
+        char c = *str++;
+        uint8_t w = getTitleCharWidth(c);
+        drawTitleChar(renderer, cur_x, y, c);
+        cur_x += w + 1; // 1px spacing
+    }
 }
