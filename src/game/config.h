@@ -130,28 +130,30 @@ static const uint8_t WHITEHOLE_ANIM_DIVISOR = 12; // 60 FPS / 12 = 5 FPS sprite 
 static const uint8_t PLAYER_BLINK_DIVISOR   = 8;  // 60 FPS / 8 = 7.5 Hz debuff blink cadence
 
 // =============================================================================
-// PLAYER PHYSICS CONSTANTS (HYBRID INERTIA)
+// PLAYER PHYSICS CONSTANTS (HUMAN ON FOOT - AGILE STEERING & SMALL IMPULSE)
 // =============================================================================
-// The player uses a HYBRID INERTIA control model:
-//   - D-pad sets the "desired direction" (8-dir + idle, normalized diagonally)
-//   - Velocity BLENDS toward the desired direction over time (inertia)
-//   - A button applies thrust (accelerates in desired direction)
-//   - B button applies extra friction (brakes)
-//   - The fat man feels heavy, drifts when turning, and takes time to stop
+// The player is a fat man on foot, NOT a wheeled vehicle:
+//   - D-pad steers agilely with high responsiveness (humans turn on a dime)
+//   - A button (gas/walk) delivers a small grounded impulse per stride
+//   - Small inertia feedback (0.25) gives body weight without car-like sliding
+//   - Natural foot friction (0.040) stops in a few strides when coasting
+//   - B button (brake) plants feet for a quick emergency stop
 //
 // Tuning parameters:
-//   PLAYER_ACCEL: thrust per frame (responsive takeoff)
-//   PLAYER_FRICTION: passive drag per frame (smooth glide)
-//   PLAYER_BRAKE_FRICTION: drag when B held (responsive braking/drifting)
-//   PLAYER_MAX_SPEED: velocity magnitude cap (60 px/sec across 128px screen)
-//   PLAYER_INERTIA: velocity blend factor in Q8.8 (0.85 = heavy drift)
-//   DIAGONAL_FACTOR: 1/sqrt(2) in Q8.8 (181/256 = 0.7071) for equal 8-dir speed
+//   PLAYER_STEP_IMPULSE: Initial stride impulse from standstill (0.25 px/frame)
+//   PLAYER_ACCEL: Continuous stride impulse per frame while A held (0.040 px/frame)
+//   PLAYER_FRICTION: Foot drag when coasting (0.040 px/frame, stops in ~20 frames)
+//   PLAYER_BRAKE_FRICTION: Foot-plant drag when B held (0.12 px/frame, stops in ~8 frames)
+//   PLAYER_MAX_SPEED: Comfortable human jogging pace (0.95 px/frame ~= 57 px/sec)
+//   PLAYER_INERTIA: Steering blend factor (0.25 = 75% instant turn, 25% weight)
+//   DIAGONAL_FACTOR: 1/sqrt(2) in Q8.8 (181/256 ~= 0.7071) for equal 8-dir speed
 
-static const fp_t PLAYER_ACCEL          = FLOAT_TO_FP(0.09);  // Thrust per frame
-static const fp_t PLAYER_FRICTION       = FLOAT_TO_FP(0.012); // Passive drag per frame
-static const fp_t PLAYER_BRAKE_FRICTION = FLOAT_TO_FP(0.06);  // Drag when B held
-static const fp_t PLAYER_MAX_SPEED      = FLOAT_TO_FP(1.05);  // Max velocity magnitude
-static const fp_t PLAYER_INERTIA        = FLOAT_TO_FP(0.85);  // Velocity blend factor (0-1)
+static const fp_t PLAYER_STEP_IMPULSE   = FLOAT_TO_FP(0.25);  // Initial stride impulse
+static const fp_t PLAYER_ACCEL          = FLOAT_TO_FP(0.040); // Stride impulse per frame
+static const fp_t PLAYER_FRICTION       = FLOAT_TO_FP(0.040); // Natural foot friction
+static const fp_t PLAYER_BRAKE_FRICTION = FLOAT_TO_FP(0.12);  // Foot-plant brake drag
+static const fp_t PLAYER_MAX_SPEED      = FLOAT_TO_FP(0.95);  // Max jogging speed
+static const fp_t PLAYER_INERTIA        = FLOAT_TO_FP(0.25);  // Agile human steering (small inertia)
 static const fp_t DIAGONAL_FACTOR       = 181;                // 1/sqrt(2) in Q8.8 (~0.7071)
 
 // Player hitbox size in pixels (used for collision detection)

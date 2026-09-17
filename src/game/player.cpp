@@ -73,8 +73,11 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
         }
     }
 
-    // 3. Directional thrust & inertia blending
-    if (accel && (desiredDx != 0 || desiredDy != 0)) {
+    // 3. Directional movement & agile human steering
+    bool hasDir = (desiredDx != 0 || desiredDy != 0);
+    fp_t currentSpeed = (fp_t)approxDistance(0, 0, vx, vy);
+
+    if (hasDir) {
         // Diagonal normalization in Q8.8 (DIAGONAL_FACTOR = 181 ~= 0.7071)
         fp_t dirX, dirY;
         if (desiredDx != 0 && desiredDy != 0) {
@@ -85,31 +88,37 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
             dirY = INT_TO_FP(desiredDy);
         }
 
-        // Target velocity vector based on desired heading and max speed
-        fp_t targetVx = FP_MUL(dirX, maxSpd);
-        fp_t targetVy = FP_MUL(dirY, maxSpd);
+        if (accel) {
+            // Gas input (walk): small grounded impulse
+            // If starting from a standstill, apply an initial stride impulse
+            if (currentSpeed < PLAYER_STEP_IMPULSE) {
+                currentSpeed = PLAYER_STEP_IMPULSE;
+            } else {
+                currentSpeed += FP_MUL(accelVal, dt);
+                if (currentSpeed > maxSpd) currentSpeed = maxSpd;
+            }
+        }
 
-        // Inertia blending: smooth velocity vector steering towards target direction
+        // Steering: humans turn and redirect their velocity quickly
+        // Small inertia feedback (0.25) provides body weight without wide car-like drifting
+        fp_t targetVx = FP_MUL(dirX, currentSpeed);
+        fp_t targetVy = FP_MUL(dirY, currentSpeed);
+
         fp_t blend = PLAYER_INERTIA;
         vx = FP_MUL(vx, blend) + FP_MUL(targetVx, FP_ONE - blend);
         vy = FP_MUL(vy, blend) + FP_MUL(targetVy, FP_ONE - blend);
-
-        // Direct acceleration step scaled by delta-time
-        fp_t thrustStep = FP_MUL(accelVal, dt);
-        vx += FP_MUL(dirX, thrustStep);
-        vy += FP_MUL(dirY, thrustStep);
     }
 
-    // 4. Deceleration (Active braking or passive friction)
+    // 4. Deceleration (Active braking or natural foot friction)
     if (brake) {
-        // Holding B applies strong braking friction
+        // Holding B applies firm foot-plant braking (stops in ~8 frames)
         fp_t fStep = FP_MUL(PLAYER_BRAKE_FRICTION, dt);
         if (vx > 0) { vx -= fStep; if (vx < 0) vx = 0; }
         if (vx < 0) { vx += fStep; if (vx > 0) vx = 0; }
         if (vy > 0) { vy -= fStep; if (vy < 0) vy = 0; }
         if (vy < 0) { vy += fStep; if (vy > 0) vy = 0; }
     } else if (!accel) {
-        // When not accelerating, apply passive drag for smooth drift/gliding
+        // When not walking, natural foot drag brings fat man to a stop in ~20 frames
         fp_t fStep = FP_MUL(PLAYER_FRICTION, dt);
         if (vx > 0) { vx -= fStep; if (vx < 0) vx = 0; }
         if (vx < 0) { vx += fStep; if (vx > 0) vx = 0; }
@@ -121,10 +130,10 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
     int32_t speedSq = (int32_t)vx * vx + (int32_t)vy * vy;
     int32_t maxSpdSq = (int32_t)maxSpd * maxSpd;
     if (speedSq > maxSpdSq) {
-        fp_t currentSpeed = (fp_t)approxDistance(0, 0, vx, vy);
-        if (currentSpeed > 0) {
-            vx = (fp_t)(((int32_t)vx * maxSpd) / currentSpeed);
-            vy = (fp_t)(((int32_t)vy * maxSpd) / currentSpeed);
+        fp_t finalSpeed = (fp_t)approxDistance(0, 0, vx, vy);
+        if (finalSpeed > 0) {
+            vx = (fp_t)(((int32_t)vx * maxSpd) / finalSpeed);
+            vy = (fp_t)(((int32_t)vy * maxSpd) / finalSpeed);
         }
     }
 

@@ -16,12 +16,12 @@ A fat man runs on a pseudo-3D top-down infinite plane, dodging delicious food (P
 
 ## Core Mechanics
 
-### Hybrid Inertia Controls
-- D-pad sets desired direction (8 directions + idle)
-- A button applies thrust in desired direction
-- B button brakes (increases friction)
-- Strong inertia: the fat man drifts and slides when changing direction
-- Feels like steering a heavy object — satisfying and skillful
+### Human-on-Foot Controls (Agile Steering & Small Impulse)
+- **D-pad (8 directions + idle)**: Steers agilely with direct human responsiveness. Humans turn on foot much faster than wheeled vehicles, redirecting velocity in 2–3 frames.
+- **A button (Gas / Walk input)**: Delivers a small, grounded impulse per stride (initial step impulse of 0.25 px/frame, steady 0.040 px/frame build-up), avoiding rocket-like vehicle acceleration.
+- **Small Inertia Feedback (`PLAYER_INERTIA = 0.25`)**: Preserves the tactile weight and physical presence of a running fat man without the uncontrollable wide skidding of a car.
+- **Natural Foot Drag (`PLAYER_FRICTION = 0.040`)**: Releasing A brings the player to a smooth, natural stop within ~20 frames (~0.33 sec / 2–3 strides) instead of gliding on ice.
+- **B button (Brake)**: Active foot-plant deceleration (`PLAYER_BRAKE_FRICTION = 0.12`), bringing the runner to a rapid emergency stop in ~8 frames.
 
 ### Blackhole Entity
 Properties translated from real black hole physics:

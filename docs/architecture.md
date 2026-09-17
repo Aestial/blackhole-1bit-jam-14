@@ -152,7 +152,7 @@ arduino-cli upload --fqbn arduboy:avr:arduboy --port /dev/ttyACM0 ./
 | Milestone | Status | Files Modified | Description |
 |-----------|--------|----------------|-------------|
 | **M0** | ✅ Complete | Full tree | Project scaffold, architecture, HAL interfaces, game state machine |
-| **M1** | ✅ Complete | `player.cpp`, `game.cpp`, `config.h`, `world.cpp` | Hybrid inertia physics, full-screen pseudo-3D ground grid (vanishing point above screen, no visible horizon), configurable HUD position |
+| **M1** | ✅ Complete | `player.cpp`, `game.cpp`, `config.h`, `world.cpp` | Human-on-foot agile steering (small inertia feedback, small walk impulse, natural foot drag), full-screen pseudo-3D ground grid (vanishing point above screen, no visible horizon), configurable HUD position |
 | **M2** | ✅ Complete | `config.h`, `entity.h/cpp`, `player.h/cpp`, `world.h/cpp`, `game.h/cpp`, `assets/items_16.png`, `assets/sprites.h` | Zero-allocation static object pool, whitehole-proximate decaying money distribution curve (safely outside attraction force), `MIN_ITEM_SEPARATION=45`, collision detection, power-ups (coffee speed boost), money collectibles (Diamond + Bills with combo multipliers), 8 distinct food hazards (Apple, Pizza, Taco, Burger, Fries, Cake, Donut, Ice Cream with custom slow debuffs), despawning, and PROGMEM sprite rendering |
 | **M3** | 📋 Planned | `game.cpp` | Enable blackhole gravity loop, `renderBlackhole()` with concentric rings + spin |
 | **M4** | 📋 Planned | `game.cpp` | Polish `renderTitle()`, `renderGameOver()`, `renderHUD()`, converging grid distortion |
