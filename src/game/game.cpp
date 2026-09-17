@@ -75,10 +75,11 @@ void Game::reset() {
     score = 0;
     comboMultiplier = 1;
 
-    // Pre-populate 2 spacious, distant items across the plane
-    // Far enough apart (>60px) and well clear of the HUD and whitehole
-    entities.spawn(ENTITY_COLLECTIBLE_DIAMOND, player.x + INT_TO_FP32(15), player.y - INT_TO_FP32(25));
-    entities.spawn(ENTITY_FOOD_PIZZA, player.x - INT_TO_FP32(35), player.y - INT_TO_FP32(60));
+    // Pre-populate 2 spacious items across the plane:
+    // 1. Diamond in the whitehole risk-reward orbit (52px from whitehole, safe from 30px charge)
+    // 2. Pizza hazard ahead in the flight path (>70px away from Diamond)
+    entities.spawn(ENTITY_COLLECTIBLE_DIAMOND, world.bhX + INT_TO_FP32(50), world.bhY - INT_TO_FP32(15));
+    entities.spawn(ENTITY_FOOD_PIZZA, player.x + INT_TO_FP32(25), player.y - INT_TO_FP32(65));
 }
 
 // =============================================================================
@@ -155,29 +156,72 @@ void Game::updatePlaying(HalInput& input, fp_t dt) {
             spawnType = (EntityType)(ENTITY_FOOD_APPLE + foodRoll);
         }
 
-        // Try candidate positions enforcing MIN_ITEM_SEPARATION
+        bool isMoney = (spawnType == ENTITY_COLLECTIBLE_DIAMOND || spawnType == ENTITY_COLLECTIBLE_BILLS);
+
+        // Try candidate positions enforcing MIN_ITEM_SEPARATION and whitehole attraction safety
         for (uint8_t attempt = 0; attempt < 4; attempt++) {
-            // Spawn position: in a ring around the player (SPAWN_MIN_DISTANCE to SPAWN_RADIUS)
-            int16_t dist = (int16_t)world.randomRange(SPAWN_MIN_DISTANCE, SPAWN_RADIUS);
-            int16_t dx = (int16_t)world.randomRange(0, dist);
-            int16_t dy = dist - dx;
-            if (world.nextRandom() & 1) dx = -dx;
-            if (world.nextRandom() & 1) dy = -dy;
+            fp32_t wx = 0;
+            fp32_t wy = 0;
 
-            // Bias 60% of spawns ahead in the player's movement direction
-            if ((player.vx != 0 || player.vy != 0) && (world.nextRandom() % 5 < 3)) {
-                if (player.vx > 0 && dx < 0) dx = -dx;
-                if (player.vx < 0 && dx > 0) dx = -dx;
-                if (player.vy > 0 && dy < 0) dy = -dy;
-                if (player.vy < 0 && dy > 0) dy = -dy;
-            }
+            // Money spawns primarily (80%) near the whitehole with a decaying distribution curve,
+            // but safely outside its attraction force. On attempt 3, fallback to player path.
+            bool spawnNearWhitehole = isMoney && (attempt < 3) && (world.randomRange(0, 99) < MONEY_BH_SPAWN_CHANCE);
 
-            fp32_t wx = player.x + INT_TO_FP32(dx);
-            fp32_t wy = player.y + INT_TO_FP32(dy);
+            if (spawnNearWhitehole) {
+                // Whitehole Risk-Reward Zone:
+                // Safe distance starts beyond whitehole attraction radius (bhCharge) + safety buffer
+                // so that neither the item nor the player gets sucked in by the whitehole.
+                uint16_t minSafeDist = (uint16_t)FP_TO_INT(world.bhCharge) + MONEY_BH_SAFE_BUFFER;
 
-            // Guard: do not spawn right inside the blackhole core
-            if (approxDistance(wx, wy, world.bhX, world.bhY) <= INT_TO_FP32(25)) {
-                continue;
+                // Decaying distribution curve peaked at minSafeDist:
+                // min(u1, u2) produces a linearly decaying density function:
+                // 75% of items spawn in the inner half of the orbit ring!
+                uint16_t u1 = world.randomRange(0, MONEY_BH_RING_SPAN);
+                uint16_t u2 = world.randomRange(0, MONEY_BH_RING_SPAN);
+                uint16_t offset = (u1 < u2) ? u1 : u2;
+                int16_t r = (int16_t)(minSafeDist + offset);
+
+                // Sample isotropic angle from 16-point unit circle lookup table
+                uint8_t dir = world.nextRandom() & 15;
+                int16_t dx = (int16_t)(((int32_t)UNIT_CIRCLE_X[dir] * r) / 127);
+                int16_t dy = (int16_t)(((int32_t)UNIT_CIRCLE_Y[dir] * r) / 127);
+
+                wx = world.bhX + INT_TO_FP32(dx);
+                wy = world.bhY + INT_TO_FP32(dy);
+
+                // Guard: ensure not right on top of player (< 35px)
+                if (approxDistance(wx, wy, player.x, player.y) < INT_TO_FP32(35)) {
+                    continue;
+                }
+
+                // Guard: ensure not out of camera despawn range
+                if (world.isTooFar(wx, wy)) {
+                    continue;
+                }
+            } else {
+                // Standard flight ring around player (used for food hazards, coffee, and open-field money)
+                int16_t dist = (int16_t)world.randomRange(SPAWN_MIN_DISTANCE, SPAWN_RADIUS);
+                int16_t dx = (int16_t)world.randomRange(0, dist);
+                int16_t dy = dist - dx;
+                if (world.nextRandom() & 1) dx = -dx;
+                if (world.nextRandom() & 1) dy = -dy;
+
+                // Bias 60% of spawns ahead in the player's movement direction
+                if ((player.vx != 0 || player.vy != 0) && (world.nextRandom() % 5 < 3)) {
+                    if (player.vx > 0 && dx < 0) dx = -dx;
+                    if (player.vx < 0 && dx > 0) dx = -dx;
+                    if (player.vy > 0 && dy < 0) dy = -dy;
+                    if (player.vy < 0 && dy > 0) dy = -dy;
+                }
+
+                wx = player.x + INT_TO_FP32(dx);
+                wy = player.y + INT_TO_FP32(dy);
+
+                // Guard: do not spawn inside the whitehole core or attraction radius
+                uint16_t minSafe = (uint16_t)FP_TO_INT(world.bhCharge) + 10;
+                if (approxDistance(wx, wy, world.bhX, world.bhY) <= INT_TO_FP32(minSafe)) {
+                    continue;
+                }
             }
 
             // Check separation against all existing active entities

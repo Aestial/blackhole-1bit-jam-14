@@ -288,6 +288,25 @@ static const uint8_t MIN_ITEM_SEPARATION    = 45;   // Minimum world distance be
 static const uint8_t DESPAWN_DISTANCE       = 130;  // Distance from camera edge to despawn
 
 // =============================================================================
+// MONEY DISTRIBUTION CONSTANTS (WHITEHOLE RISK-REWARD ZONE)
+// =============================================================================
+// Money collectibles (Diamond and Bills) spawn primarily in an orbit around
+// the whitehole. The spawn distance follows a decaying distribution curve
+// that peaks just outside the whitehole's attraction radius (charge).
+//
+//   minSafeDist = FP_TO_INT(bhCharge) + MONEY_BH_SAFE_BUFFER
+//
+// This guarantees that neither the money nor the player gets eaten by the
+// whitehole's attraction force (M3) when grabbing the treasure.
+static const uint8_t MONEY_BH_SPAWN_CHANCE   = 80;  // % of money spawns targeting the whitehole orbit
+static const uint8_t MONEY_BH_SAFE_BUFFER    = 20;  // Buffer px beyond bhCharge (ensures player clearance)
+static const uint8_t MONEY_BH_RING_SPAN      = 40;  // Width of orbit ring for decaying distribution
+
+// 16-point unit circle lookup table (normalized to 127) for isotropic radial placement
+static const int8_t UNIT_CIRCLE_X[16] = { 127, 117,  90,  49,   0, -49, -90,-117, -127,-117, -90, -49,   0,  49,  90, 117 };
+static const int8_t UNIT_CIRCLE_Y[16] = {   0,  49,  90, 117, 127, 117,  90,  49,    0, -49, -90,-117, -127,-117, -90, -49 };
+
+// =============================================================================
 // SCORING
 // =============================================================================
 // Points for collectibles and passive survival time.

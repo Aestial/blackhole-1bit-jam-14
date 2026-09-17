@@ -45,13 +45,19 @@ The blackhole tracks the player's position at a speed that linearly increases ov
 - Passive score: +1 point per second survived
 - High score persisted to EEPROM
 
+### Whitehole Risk-Reward Money Distribution
+- **Whitehole Orbit Proximity**: 80% of money items (Diamonds and Bills) spawn in an orbital ring around the whitehole, creating high risk/reward tension.
+- **Attraction Force Safety Clearance**: Items spawn at $R \ge \text{FP\_TO\_INT}(bhCharge) + \text{MONEY\_BH\_SAFE\_BUFFER}$ (starts at $30 + 20 = 50$ px), ensuring neither the collectible nor the player gets pulled in by the whitehole's gravitational force (M3) during pickup.
+- **Decaying Distribution Curve**: Within the orbit ring ($R \in [R_{safe\_min}, R_{safe\_min} + 40]$), spawn distance uses a decaying density function ($\Delta r = \min(u_1, u_2)$) where 75% of money spawns in the inner half of the ring, concentrating loot close to the danger zone.
+- **Dynamic Growth Compatibility**: As the whitehole's mass and charge grow over time (M3), the safe spawning perimeter automatically scales outwards.
+
 ### Power-Ups
 - **Coffee Mug**: Grants +35% turbo speed and +50% acceleration burst for 3 seconds (180 frames) and cleanses any active food slow debuff immediately.
 
 ### Spacing & Item Density
 - Generous spawn interval (initial 180 frames / ~3.0s, down to 60 frames / ~1.0s)
 - Guaranteed `MIN_ITEM_SEPARATION` of 45 world units between all items to prevent clutter and ensure readability at high flight speeds
-- Spawns placed well ahead in a 55–120px ring with directional movement bias
+- Food hazards and coffee spawn along the player's flight path (55–120px ring with movement direction bias)
 
 ### Infinite Plane
 - Camera follows player
