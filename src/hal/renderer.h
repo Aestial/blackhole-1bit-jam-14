@@ -106,6 +106,12 @@
 //   void drawOverwrite(int16_t x, int16_t y, const uint8_t* bitmap, uint8_t frame);
 //     Draw a sprite frame overwriting existing pixels completely (both 0s and 1s).
 //
+//   void drawExternalMask(int16_t x, int16_t y, const uint8_t* bitmap, const uint8_t* mask, uint8_t frame, uint8_t mask_frame);
+//     Draw sprite using external mask: mask 1-bits cleared to BLACK, bitmap 1-bits set to WHITE.
+//
+//   void drawErase(int16_t x, int16_t y, const uint8_t* bitmap, uint8_t frame);
+//     Draw sprite erasing pixels: bitmap 1-bits cleared to BLACK in buffer (0-bits untouched).
+//
 // =============================================================================
 
 #endif // HAL_RENDERER_H

@@ -393,6 +393,55 @@ void Game::renderBackground(HalRenderer& renderer) {
     }
 }
 
+void Game::drawSpriteWithConfig(HalRenderer& renderer, int16_t x, int16_t y,
+                                const uint8_t* bitmap, const uint8_t* mask,
+                                const uint8_t* outline, uint8_t frame,
+                                SpriteAlphaMode alphaMode,
+                                SpriteOutlineMode outlineMode) {
+    if (alphaMode == SPRITE_ALPHA_TRANSPARENT) {
+        // Native transparent sprite: white pixels drawn, 0-bits untouched
+        renderer.drawSelfMasked(x, y, bitmap, frame);
+        return;
+    }
+
+    // Opaque background mode (solid black background behind sprite)
+    switch (outlineMode) {
+        case SPRITE_OUTLINE_BLACK:
+            // 1. Erase dilated outline footprint to BLACK (erases background grid lines)
+            if (outline != nullptr) {
+                renderer.drawErase(x, y, outline, frame);
+            } else if (mask != nullptr) {
+                renderer.drawErase(x, y, mask, frame);
+            }
+            // 2. Draw white bitmap art pixels on top
+            renderer.drawSelfMasked(x, y, bitmap, frame);
+            break;
+
+        case SPRITE_OUTLINE_WHITE:
+            // 1. Draw dilated outline footprint in WHITE
+            if (outline != nullptr) {
+                renderer.drawSelfMasked(x, y, outline, frame);
+            }
+            // 2. Erase interior mask to BLACK and draw white bitmap art
+            if (mask != nullptr) {
+                renderer.drawExternalMask(x, y, bitmap, mask, frame, frame);
+            } else {
+                renderer.drawSelfMasked(x, y, bitmap, frame);
+            }
+            break;
+
+        case SPRITE_OUTLINE_NONE:
+        default:
+            // Solid black interior background, no extra outline border
+            if (mask != nullptr) {
+                renderer.drawExternalMask(x, y, bitmap, mask, frame, frame);
+            } else {
+                renderer.drawSelfMasked(x, y, bitmap, frame);
+            }
+            break;
+    }
+}
+
 void Game::renderEntities(HalRenderer& renderer) {
     for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
         const Entity& e = entities.entities[i];
@@ -447,9 +496,11 @@ void Game::renderEntities(HalRenderer& renderer) {
                 continue;
         }
 
-        renderer.drawSelfMasked(sx - (ITEM_SPRITE_WIDTH / 2),
-                                sy - (ITEM_SPRITE_HEIGHT / 2),
-                                items_sprites, frame);
+        drawSpriteWithConfig(renderer,
+                             sx - (ITEM_SPRITE_WIDTH / 2),
+                             sy - (ITEM_SPRITE_HEIGHT / 2),
+                             items_sprites, items_masks, items_outlines, frame,
+                             ENTITY_ALPHA_MODE, ENTITY_OUTLINE_MODE);
     }
 }
 
@@ -471,9 +522,12 @@ void Game::renderPlayer(HalRenderer& renderer) {
 
     // Visual feedback for slow debuff: blink (slower cadence)
     if (!player.isSlowed() || ((player.slowTimer / PLAYER_BLINK_DIVISOR) % 2 == 0)) {
-        renderer.drawSelfMasked(sx - (PLAYER_SPRITE_WIDTH / 2),
-                                sy - (PLAYER_SPRITE_HEIGHT / 2),
-                                player_sprite, 0);
+        uint8_t playerFrame = player.facingDir + (player.walkFrame * 8);
+        drawSpriteWithConfig(renderer,
+                             sx - (PLAYER_SPRITE_WIDTH / 2),
+                             sy - (PLAYER_SPRITE_HEIGHT / 2),
+                             player_sprite, player_mask, player_outline, playerFrame,
+                             PLAYER_ALPHA_MODE, PLAYER_OUTLINE_MODE);
     }
 }
 
@@ -490,9 +544,11 @@ void Game::renderBlackhole(HalRenderer& renderer) {
 
     // Animate swirling whitehole frames based on bhSpin (slower, majestic)
     uint8_t frame = (world.bhSpin / WHITEHOLE_ANIM_DIVISOR) % WHITEHOLE_FRAME_COUNT;
-    renderer.drawSelfMasked(sx - (WHITEHOLE_SPRITE_WIDTH / 2),
-                            sy - (WHITEHOLE_SPRITE_HEIGHT / 2),
-                            whitehole_sprite, frame);
+    drawSpriteWithConfig(renderer,
+                         sx - (WHITEHOLE_SPRITE_WIDTH / 2),
+                         sy - (WHITEHOLE_SPRITE_HEIGHT / 2),
+                         whitehole_sprite, whitehole_mask, nullptr, frame,
+                         WHITEHOLE_ALPHA_MODE, WHITEHOLE_OUTLINE_MODE);
 }
 
 void Game::renderHUD(HalRenderer& renderer) {

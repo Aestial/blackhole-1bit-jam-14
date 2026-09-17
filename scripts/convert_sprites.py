@@ -18,46 +18,113 @@ import os
 import sys
 from PIL import Image
 
+from collections import deque
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 ASSETS_DIR = os.path.join(ROOT_DIR, "assets")
 OUTPUT_HEADER = os.path.join(ASSETS_DIR, "sprites.h")
 
 
-def image_to_arduboy_bytes(img, frame_w, frame_h):
+def image_to_frames_bool(img, frame_w, frame_h):
     """
-    Converts a PIL Image into Arduboy vertical page format:
-      Byte 0: width
-      Byte 1: height
-      Followed by (height / 8) * width bytes per frame.
-      Bit 0 is the topmost pixel in each 8-pixel column.
+    Extracts each frame as a 2D boolean array [y][x] where True = bright/opaque white pixel.
     """
     img = img.convert("RGBA")
     total_w, total_h = img.size
     cols = total_w // frame_w
     rows = total_h // frame_h
-    total_frames = cols * rows
-
-    bytes_out = [frame_w, frame_h]
+    frames = []
 
     for r in range(rows):
         for c in range(cols):
             ox = c * frame_w
             oy = r * frame_h
-            for page in range(frame_h // 8):
+            frame_grid = []
+            for y in range(frame_h):
+                row = []
                 for x in range(frame_w):
-                    byte_val = 0
-                    for bit in range(8):
-                        y = page * 8 + bit
-                        px, py = ox + x, oy + y
-                        red, green, blue, alpha = img.getpixel((px, py))
-                        brightness = (red + green + blue) // 3
-                        # White pixel if opaque and bright
-                        if alpha >= 128 and brightness > 128:
-                            byte_val |= (1 << bit)
-                    bytes_out.append(byte_val)
+                    red, green, blue, alpha = img.getpixel((ox + x, oy + y))
+                    brightness = (red + green + blue) // 3
+                    is_white = (alpha >= 128 and brightness > 128)
+                    row.append(is_white)
+                frame_grid.append(row)
+            frames.append(frame_grid)
+    return frames
 
-    return total_frames, bytes_out
+
+def extract_interior_mask(frame_grid, frame_w, frame_h):
+    """
+    Extracts interior silhouette mask by flood filling exterior from borders.
+    True = interior silhouette of the sprite.
+    """
+    outside = [[False] * frame_w for _ in range(frame_h)]
+    q = deque()
+
+    for x in range(frame_w):
+        for y in [0, frame_h - 1]:
+            if not frame_grid[y][x] and not outside[y][x]:
+                outside[y][x] = True
+                q.append((x, y))
+    for y in range(frame_h):
+        for x in [0, frame_w - 1]:
+            if not frame_grid[y][x] and not outside[y][x]:
+                outside[y][x] = True
+                q.append((x, y))
+
+    while q:
+        cx, cy = q.popleft()
+        for nx, ny in [(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)]:
+            if 0 <= nx < frame_w and 0 <= ny < frame_h:
+                if not frame_grid[ny][nx] and not outside[ny][nx]:
+                    outside[ny][nx] = True
+                    q.append((nx, ny))
+
+    return [[not outside[y][x] for x in range(frame_w)] for y in range(frame_h)]
+
+
+def dilate_mask(mask_grid, frame_w, frame_h, radius=1):
+    """
+    Dilates a mask by radius pixels in 4 cardinal directions (cross).
+    """
+    curr = [row[:] for row in mask_grid]
+    for _ in range(radius):
+        nxt = [row[:] for row in curr]
+        for y in range(frame_h):
+            for x in range(frame_w):
+                if curr[y][x]:
+                    if y > 0: nxt[y - 1][x] = True
+                    if y < frame_h - 1: nxt[y + 1][x] = True
+                    if x > 0: nxt[y][x - 1] = True
+                    if x < frame_w - 1: nxt[y][x + 1] = True
+        curr = nxt
+    return curr
+
+
+def frames_bool_to_arduboy_bytes(frames, frame_w, frame_h):
+    """
+    Converts a list of 2D boolean array frames into Arduboy vertical page format:
+      Byte 0: width
+      Byte 1: height
+      Followed by (height / 8) * width bytes per frame.
+      Bit 0 is the topmost pixel in each 8-pixel column.
+    """
+    bytes_out = [frame_w, frame_h]
+    for frame in frames:
+        for page in range(frame_h // 8):
+            for x in range(frame_w):
+                byte_val = 0
+                for bit in range(8):
+                    y = page * 8 + bit
+                    if frame[y][x]:
+                        byte_val |= (1 << bit)
+                bytes_out.append(byte_val)
+    return len(frames), bytes_out
+
+
+def image_to_arduboy_bytes(img, frame_w, frame_h):
+    frames = image_to_frames_bool(img, frame_w, frame_h)
+    return frames_bool_to_arduboy_bytes(frames, frame_w, frame_h)
 
 
 def format_c_array(name, byte_list, bytes_per_line=16):
@@ -88,20 +155,38 @@ def main():
         print("Error: Missing expected PNG files in assets/", file=sys.stderr)
         sys.exit(1)
 
-    # 1. Player
+    # 1. Player (bitmap art, interior mask, 1px dilated outline for each frame)
+    player_sheet_png = os.path.join(ASSETS_DIR, "player_sheet.png")
+    player_png = player_sheet_png if os.path.isfile(player_sheet_png) else os.path.join(ASSETS_DIR, "player_static.png")
     player_img = Image.open(player_png)
-    p_frames, p_bytes = image_to_arduboy_bytes(player_img, 16, 16)
-    print(f"  Player: {p_frames} frame(s), {len(p_bytes)} bytes")
+    p_art = image_to_frames_bool(player_img, 16, 16)
+    p_mask = [extract_interior_mask(f, 16, 16) for f in p_art]
+    p_out = [dilate_mask(m, 16, 16, 1) for m in p_mask]
 
-    # 2. Whitehole
+    p_frames, p_bytes = frames_bool_to_arduboy_bytes(p_art, 16, 16)
+    _, p_mask_bytes = frames_bool_to_arduboy_bytes(p_mask, 16, 16)
+    _, p_out_bytes = frames_bool_to_arduboy_bytes(p_out, 16, 16)
+    print(f"  Player: {p_frames} frame(s), art={len(p_bytes)}B, mask={len(p_mask_bytes)}B, outline={len(p_out_bytes)}B")
+
+    # 2. Whitehole (bitmap art + interior mask)
     wh_img = Image.open(whitehole_png)
-    wh_frames, wh_bytes = image_to_arduboy_bytes(wh_img, 32, 32)
-    print(f"  Whitehole: {wh_frames} frames, {len(wh_bytes)} bytes")
+    wh_art = image_to_frames_bool(wh_img, 32, 32)
+    wh_mask = [extract_interior_mask(f, 32, 32) for f in wh_art]
 
-    # 3. Items
+    wh_frames, wh_bytes = frames_bool_to_arduboy_bytes(wh_art, 32, 32)
+    _, wh_mask_bytes = frames_bool_to_arduboy_bytes(wh_mask, 32, 32)
+    print(f"  Whitehole: {wh_frames} frames, art={len(wh_bytes)}B, mask={len(wh_mask_bytes)}B")
+
+    # 3. Items (bitmap art, interior mask, 1px dilated outline)
     items_img = Image.open(items_png)
-    it_frames, it_bytes = image_to_arduboy_bytes(items_img, 16, 16)
-    print(f"  Items: {it_frames} items (16x16), {len(it_bytes)} bytes")
+    it_art = image_to_frames_bool(items_img, 16, 16)
+    it_mask = [extract_interior_mask(f, 16, 16) for f in it_art]
+    it_out = [dilate_mask(m, 16, 16, 1) for m in it_mask]
+
+    it_frames, it_bytes = frames_bool_to_arduboy_bytes(it_art, 16, 16)
+    _, it_mask_bytes = frames_bool_to_arduboy_bytes(it_mask, 16, 16)
+    _, it_out_bytes = frames_bool_to_arduboy_bytes(it_out, 16, 16)
+    print(f"  Items: {it_frames} items (16x16), art={len(it_bytes)}B, mask={len(it_mask_bytes)}B, outline={len(it_out_bytes)}B")
 
     # 4. Title Screen (if present)
     has_title = os.path.isfile(title_png)
@@ -274,6 +359,18 @@ struct TitleFontGlyph {
 
 static const uint8_t PLAYER_SPRITE_WIDTH   = 16;
 static const uint8_t PLAYER_SPRITE_HEIGHT  = 16;
+static const uint8_t PLAYER_FRAME_COUNT    = {p_frames};
+static const uint8_t PLAYER_DIRS_COUNT     = 8;
+
+// Player 8-direction base offsets (row 0 = step 0, row 1 = step 1)
+static const uint8_t PLAYER_DIR_DOWN       = 0;
+static const uint8_t PLAYER_DIR_DOWN_RIGHT = 1;
+static const uint8_t PLAYER_DIR_RIGHT      = 2;
+static const uint8_t PLAYER_DIR_UP_RIGHT   = 3;
+static const uint8_t PLAYER_DIR_UP         = 4;
+static const uint8_t PLAYER_DIR_UP_LEFT    = 5;
+static const uint8_t PLAYER_DIR_LEFT       = 6;
+static const uint8_t PLAYER_DIR_DOWN_LEFT  = 7;
 
 static const uint8_t WHITEHOLE_SPRITE_WIDTH  = 32;
 static const uint8_t WHITEHOLE_SPRITE_HEIGHT = 32;
@@ -319,14 +416,24 @@ static const uint8_t SPRITE_ITEM_STAR        = 17;
 // PROGMEM SPRITE DATA ARRAYS
 // =============================================================================
 
-// Player — 16x16 single frame
+// Player — 16x16 single frame (bitmap art, interior mask, 1px dilated outline)
 {format_c_array("player_sprite", p_bytes)}
 
-// Whitehole — 32x32 animated (4 swirling frames)
+{format_c_array("player_mask", p_mask_bytes)}
+
+{format_c_array("player_outline", p_out_bytes)}
+
+// Whitehole — 32x32 animated (4 swirling frames: bitmap art, interior mask)
 {format_c_array("whitehole_sprite", wh_bytes)}
 
-// Items — 16x16 spritesheet (18 items)
+{format_c_array("whitehole_mask", wh_mask_bytes)}
+
+// Items — 16x16 spritesheet (18 items: bitmap art, interior mask, 1px dilated outline)
 {format_c_array("items_sprites", it_bytes)}
+
+{format_c_array("items_masks", it_mask_bytes)}
+
+{format_c_array("items_outlines", it_out_bytes)}
 
 {title_array}
 #endif // SPRITES_H
@@ -335,7 +442,10 @@ static const uint8_t SPRITE_ITEM_STAR        = 17;
     with open(OUTPUT_HEADER, "w") as f:
         f.write(header_content)
 
-    total_bytes = len(p_bytes) + len(wh_bytes) + len(it_bytes) + len(t_bytes)
+    total_bytes = (len(p_bytes) + len(p_mask_bytes) + len(p_out_bytes) +
+                   len(wh_bytes) + len(wh_mask_bytes) +
+                   len(it_bytes) + len(it_mask_bytes) + len(it_out_bytes) +
+                   len(t_bytes))
     print(f"Successfully generated {OUTPUT_HEADER} ({total_bytes} bytes in Flash)")
 
 

@@ -102,6 +102,11 @@ struct Player {
     uint8_t boostTimer;      // Frames remaining of speed boost (0 = not boosted)
     fp_t    boostTimerAccum;  // Fractional accumulator for delta-time
 
+    // ---- 8-Direction Facing & Walk Animation State ----
+    uint8_t facingDir;  // 0..7: PLAYER_DIR_DOWN..PLAYER_DIR_DOWN_LEFT
+    uint8_t walkFrame;  // 0 = idle / step A, 1 = step B
+    uint8_t animTimer;  // Walk cadence timer
+
     // ---- Hitbox (pixels) ----
     uint8_t width;   // = PLAYER_WIDTH  (10)
     uint8_t height;  // = PLAYER_HEIGHT (10)

@@ -30,6 +30,9 @@ void Player::init() {
     vy = 0;
     desiredDx = 0;
     desiredDy = 0;
+    facingDir = 0; // PLAYER_DIR_DOWN
+    walkFrame = 0;
+    animTimer = 0;
     slowTimer = 0;
     slowIntensity = 0;
     slowTimerAccum = 0;
@@ -46,6 +49,18 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
     // 1. Calculate desired direction from D-pad inputs
     desiredDx = (right ? 1 : 0) - (left ? 1 : 0);
     desiredDy = (down  ? 1 : 0) - (up   ? 1 : 0);
+
+    // Update 8-directional facing orientation from D-pad input
+    if (desiredDx != 0 || desiredDy != 0) {
+        if (desiredDx == 0 && desiredDy > 0)       facingDir = 0; // DOWN
+        else if (desiredDx > 0 && desiredDy > 0)  facingDir = 1; // DOWN_RIGHT
+        else if (desiredDx > 0 && desiredDy == 0)  facingDir = 2; // RIGHT
+        else if (desiredDx > 0 && desiredDy < 0)  facingDir = 3; // UP_RIGHT
+        else if (desiredDx == 0 && desiredDy < 0)  facingDir = 4; // UP
+        else if (desiredDx < 0 && desiredDy < 0)  facingDir = 5; // UP_LEFT
+        else if (desiredDx < 0 && desiredDy == 0)  facingDir = 6; // LEFT
+        else if (desiredDx < 0 && desiredDy > 0)  facingDir = 7; // DOWN_LEFT
+    }
 
     // 2. Determine effective max speed & acceleration (adjusted for boost or food slow)
     fp_t maxSpd = PLAYER_MAX_SPEED;
@@ -140,6 +155,19 @@ void Player::update(bool up, bool down, bool left, bool right, bool accel, bool 
     // 6. Integrate position scaled by delta-time
     x += FP32_MUL(vx, dt);
     y += FP32_MUL(vy, dt);
+
+    // 7. Update walk cycle animation based on movement
+    fp_t currentSpeedAfter = (fp_t)approxDistance(0, 0, vx, vy);
+    if (currentSpeedAfter > FLOAT_TO_FP(0.08)) {
+        animTimer++;
+        if (animTimer >= PLAYER_WALK_ANIM_DIVISOR) {
+            animTimer = 0;
+            walkFrame = (walkFrame == 0) ? 1 : 0;
+        }
+    } else {
+        walkFrame = 0;
+        animTimer = 0;
+    }
 }
 
 // -----------------------------------------------------------------------------

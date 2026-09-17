@@ -326,6 +326,13 @@ private:
     void drawTitleText(HalRenderer& renderer, int16_t x, int16_t y, const char* str);
     uint8_t getTitleCharWidth(char c) const;
     uint16_t getTitleTextWidth(const char* str) const;
+
+    // ---- Sprite rendering helper with transparency and outline control ----
+    void drawSpriteWithConfig(HalRenderer& renderer, int16_t x, int16_t y,
+                              const uint8_t* bitmap, const uint8_t* mask,
+                              const uint8_t* outline, uint8_t frame,
+                              SpriteAlphaMode alphaMode,
+                              SpriteOutlineMode outlineMode);
 };
 
 #endif // GAME_H
