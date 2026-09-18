@@ -40,13 +40,17 @@ zip_out = '${ZIP_OUTPUT}'
 
 with zipfile.ZipFile(zip_out, 'w', zipfile.ZIP_DEFLATED) as zf:
     for root, dirs, files in os.walk(web_dir):
-        for f in files:
+        for f in sorted(files):
+            if f.startswith('test_') and f.endswith('.html'):
+                continue
+            if f.endswith('.bak') or f.endswith('.tmp'):
+                continue
             full_path = os.path.join(root, f)
             rel_path = os.path.relpath(full_path, web_dir)
             zf.write(full_path, rel_path)
 "
 else
-    (cd "${WEB_DIR}" && zip -r -9 "${ZIP_OUTPUT}" ./*)
+    (cd "${WEB_DIR}" && zip -r -9 "${ZIP_OUTPUT}" ./* -x "test_*.html" -x "*.bak" -x "*.tmp")
 fi
 
 ZIP_SIZE=$(stat -c%s "${ZIP_OUTPUT}" 2>/dev/null || stat -f%z "${ZIP_OUTPUT}")

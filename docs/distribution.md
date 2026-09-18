@@ -12,15 +12,16 @@ The project maintains a dedicated `dist/` directory that contains only release-r
 dist/
 ├── supermassive-whitehole.hex # Production AVR HEX file (also mirrored to whitehole.hex)
 ├── supermassive-whitehole.elf # Debug symbols and memory analysis ELF binary
-├── supermassive-whitehole-web.zip # Self-contained itch.io release bundle (~476 KB, mirrored to whitehole-web.zip)
+├── supermassive-whitehole-web.zip # Self-contained itch.io release bundle (~190 KB, mirrored to whitehole-web.zip)
 ├── README.md                 # Flashing and deployment quickstart guide
-│   └── web/                      # Lean ProjectABE HTML5 emulator (~820 KB total)
-│       ├── index.html            # Clean HTML5 entry point (no external editor dependencies)
-│       ├── app.js                # Core emulator engine (autorun & dual-skin enabled)
-│       ├── style.css             # Clean layout (debugger overlay hidden, pixel-sharp canvas)
+│   └── web/                      # Lean ProjectABE HTML5 emulator
+│       ├── index.html            # Clean HTML5 entry point with responsive viewport
+│       ├── app.js                # Core emulator engine (auto device detection, button latching, iframe overlay)
+│       ├── style.css             # Clean layout (pixel-sharp canvas, touch styling, mobile overlay)
 │       ├── ArduboyProject.hex    # Active game binary loaded by the emulator
-│       ├── Arduboy-off.png       # Compact 393×624 Arduboy device casing skin
+│       ├── Arduboy (8).png       # High-contrast 626×1004 Arduboy handheld device casing
 │       ├── logo.png              # 1-bit monochrome boot logo (1 KB)
+│       ├── test_iframe.html      # Local developer harness simulating itch.io desktop & mobile embeds
 │       └── layouts/              # Minimal layout templates
 │           ├── Sim.html          # Simulator DOM tree (canvas, audio, buttons)
 │           ├── Env.html          # App container
@@ -34,20 +35,36 @@ dist/
 
 ---
 
-## 2. ProjectABE Template Optimization
+## 2. ProjectABE Responsive Template Optimization
 
-The stock ProjectABE emulator distribution contains over 6 MB of extraneous assets (unused skins like Pipboy and Tamagotchi, 30+ Ace editor themes, demo games, unneeded libraries).
+The stock ProjectABE emulator distribution contains over 6 MB of extraneous assets (unused skins, 30+ Ace editor themes, demo games, unneeded libraries).
 
-For production distribution, `dist/web/` was optimized down to **~820 KB** (and **~470 KB** compressed) with the following enhancements:
+For production distribution, `dist/web/` was optimized down to **~190 KB** compressed with the following enhancements:
 
-### Key Optimizations
-1. **Unused Asset Stripping**: Removed 10 large 626×1004 skins (`Arduboy (0..9).png`), Pipboy, Tamagotchi, Microcard textures, unused ace themes, and demo `.arduboy` binaries.
-2. **Debugger Overlay Suppression**: The floating unstyled `#ideContainer` panel is suppressed by default (`display: none !important`), eliminating visual clutter over the game.
-3. **Automatic Game Boot**: If no query parameters (`?hex=...`) are provided in the URL, `app.js` defaults `url` to `'ArduboyProject.hex'`, ensuring the game immediately launches upon opening `index.html`.
-4. **Dual Display Skin Modes**:
-   - **Pure Game Screen (`bare` / `BareFit`)**: Default mode. The 128×64 OLED screen scales to fit the browser viewport in a strict 2:1 aspect ratio with black letterboxing, razor-sharp pixel rendering, and zero device casing.
-   - **Compact Arduboy Skin (`arduboy`)**: Uses the smallest official Arduboy casing (`Arduboy-off.png`, 393×624). The screen fits accurately within the OLED bezel, and on-screen D-pad / action buttons are fully functional for touch/mouse input.
-   - **In-Browser Toggle**: Press <kbd>F3</kbd> at any time to toggle between skins.
+### Responsive Device Detection & Layout Modes (GB Studio Behavior)
+Matching the seamless device responsiveness of **GB Studio HTML exports**, the emulator automatically adapts its layout depending on whether the user is on desktop or mobile:
+
+1. **Desktop Mode (`bare` / `BareFit`)**:
+   - Automatically selected when accessing from desktop browsers (`width > 768px` and no mobile user-agent).
+   - Renders the pure 128×64 OLED screen scaled 2:1 with black letterboxing, pixel-perfect rendering, and zero on-screen button clutter.
+   - Fully controllable via keyboard (`Arrow Keys`, `Z` for Button A, `X` for Button B).
+
+2. **Mobile Handheld Mode (`arduboy`)**:
+   - Automatically selected when accessing from mobile devices (`Android`, `iPhone`, `iPad`, or `width <= 768px` in portrait).
+   - Renders the full handheld Arduboy shell using high-contrast **`Arduboy (8).png`** (626×1004).
+   - Accurately positioned hitboxes for the D-pad and Action Buttons with touch-optimized event handling and visual active feedback.
+   - **Touch Input Latching (~55ms)**: Guarantees even instantaneous sub-frame taps are detected by the Arduboy 60 FPS polling cycle without missed inputs.
+   - Prevents scroll/zoom gestures with `touch-action: none`.
+
+3. **itch.io Mobile Iframe Handling**:
+   - When embedded inside an iframe on a mobile device (`window !== window.top`), touch scrolling and iframe gestures can disrupt gameplay.
+   - The emulator displays a sleek, retro **"TAP TO PLAY FULLSCREEN"** overlay. Tapping it opens the mobile standalone emulator in a dedicated browser tab for an uninhibited handheld gaming experience.
+   - In desktop iframes, the game runs directly inside the itch.io embed with unrestricted keyboard controls.
+
+4. **URL Overrides & In-Browser Toggle**:
+   - Force Desktop: `?skin=bare` or `?mode=desktop`
+   - Force Mobile: `?skin=arduboy` or `?mode=mobile`
+   - Press <kbd>F3</kbd> in a desktop browser at any time to toggle skins.
 
 ---
 
