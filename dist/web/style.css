@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     position: relative;
     padding: 0;
     margin: 0;
@@ -10,7 +11,7 @@ html, body {
     color: #DEF;
 }
 
-#getNative{
+#getNative {
     font-style: italic;
     text-align: right;
     cursor: pointer;
@@ -21,7 +22,7 @@ html, body {
     width: 100%;
     height: 100%;
     position: absolute;
-    -background-color:white;
+    -background-color: white;
     background-image: url(logo.png);
     background-repeat: no-repeat;
     background-position: center;
@@ -60,12 +61,12 @@ html, body {
 }
 
 .market .gameName {
-  display: block;
-  margin-top: 135px;
+    display: block;
+    margin-top: 135px;
 }
 
 .market .authorName {
-  font-size: 0.75em;
+    font-size: 0.75em;
 }
 
 
@@ -106,26 +107,26 @@ h2 {
     bottom: 0;
     margin: 5px;
     padding: 0px 2px;
-    background: rgba(255,255,255,0.7);
+    background: rgba(255, 255, 255, 0.7);
     border-radius: 3px;
 }
 
 .market li {
-  background-repeat: no-repeat;
-  background-position: 50% 0;
-  background-size: 256px 128px;
-  background-color: #789;
-  border: 1px solid #789;
-  list-style: none;
-  margin: 5px;
-  padding: 3px;
-  height: 180px;
-  width: 256px;
-  position: relative;
-  cursor: pointer;
-  image-rendering: pixelated;
-  /* float: left; */
-  box-sizing: border-box;
+    background-repeat: no-repeat;
+    background-position: 50% 0;
+    background-size: 256px 128px;
+    background-color: #789;
+    border: 1px solid #789;
+    list-style: none;
+    margin: 5px;
+    padding: 3px;
+    height: 180px;
+    width: 256px;
+    position: relative;
+    cursor: pointer;
+    image-rendering: pixelated;
+    /* float: left; */
+    box-sizing: border-box;
 }
 
 #fileList {
@@ -185,7 +186,8 @@ nav button {
     font-size: inherit;
 }
 
-.FileSaver, .RecordingIndicator {
+.FileSaver,
+.RecordingIndicator {
     text-decoration: none;
     color: white;
     background: #567;
@@ -197,7 +199,8 @@ nav button {
     margin: 10px;
 }
 
-.FileSaver, .RecordingIndicator {
+.FileSaver,
+.RecordingIndicator {
     top: auto;
     bottom: 0;
 }
@@ -206,20 +209,22 @@ nav button {
     margin: 10px;
 }
 
-@keyframes blinker {  
-  50% { opacity: 0; }
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
 }
 
 .RecordingIndicator {
-	width: 20px;
-	height: 20px;
-	border-radius: 20px;
-	background: red;
-	animation: blinker 1s linear infinite;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    background: red;
+    animation: blinker 1s linear infinite;
 }
 
 .pauseOverlay {
-    background: rgba(0,0,0,0.85);
+    background: rgba(0, 0, 0, 0.85);
     position: fixed;
     top: 0;
     left: 0;
@@ -228,7 +233,7 @@ nav button {
     text-align: center;
 }
 
-#simBox{
+#simBox {
     position: relative;
     flex-grow: 1;
 }
@@ -243,15 +248,18 @@ nav button {
     top: 0;
     flex-direction: column-reverse;
 }
+
 #ideContainer {
     max-height: 50%;
 }
+
 @media (min-aspect-ratio: 1/1) {
-    #fb{
-	flex-direction: row;
+    #fb {
+        flex-direction: row;
     }
+
     #ideContainer {
-	max-height: initial;
+        max-height: initial;
     }
 }
 
@@ -264,27 +272,27 @@ nav button {
     top: 0;
     bottom: 0;
 
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;    
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
-#simContainer>*{
+#simContainer>* {
     user-select: none;
 
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;    
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
-#simContainer img{
+#simContainer img {
     position: relative;
     height: 100%;
     width: 100%;
     pointer-events: none;
-    /* image-rendering: optimizeSpeed; */    
+    /* image-rendering: optimizeSpeed; */
 }
 
 #simContainer img:not([src]),
@@ -303,54 +311,58 @@ nav button {
     image-rendering: pixelated;
 }
 
-canvas:-webkit-full-screen{
-  width: 100% !important;
-  left: initial !important;
-  top: initial !important;
-  bottom: initial !important;
-  height: initial !important;
-  object-fit: contain !important;
-  background-color: black !important;
-}
-canvas:-moz-full-screen{
-  width: 100% !important;
-  left: initial !important;
-  top: initial !important;
-  bottom: initial !important;
-  height: initial !important;
-  object-fit: contain !important;
-  background-color: black !important;
-}
-canvas:fullscreen{
-  width: 100% !important;
-  left: initial !important;
-  top: initial !important;
-  bottom: initial !important;
-  height: initial !important;
-  object-fit: contain !important;
-  background-color: black !important;
+canvas:-webkit-full-screen {
+    width: 100% !important;
+    left: initial !important;
+    top: initial !important;
+    bottom: initial !important;
+    height: initial !important;
+    object-fit: contain !important;
+    background-color: black !important;
 }
 
-.microcard canvas:-webkit-full-screen{
+canvas:-moz-full-screen {
+    width: 100% !important;
+    left: initial !important;
+    top: initial !important;
+    bottom: initial !important;
+    height: initial !important;
+    object-fit: contain !important;
+    background-color: black !important;
+}
+
+canvas:fullscreen {
+    width: 100% !important;
+    left: initial !important;
+    top: initial !important;
+    bottom: initial !important;
+    height: initial !important;
+    object-fit: contain !important;
+    background-color: black !important;
+}
+
+.microcard canvas:-webkit-full-screen {
     transform: rotate(-90deg) scale(0.55) !important;
 }
-.microcard canvas:-moz-full-screen{
+
+.microcard canvas:-moz-full-screen {
     transform: rotate(-90deg) scale(0.55) !important;
 }
-.microcard canvas:fullscreen{
+
+.microcard canvas:fullscreen {
     transform: rotate(-90deg) scale(0.55) !important;
 }
 
 #simContainer led {
-  transition: opacity 0.2s;
-  width: 2%;
-  height: 2%;
-  overflow: hidden;
-  background: lightblue;
-  position: absolute;
-  top: 19.3%;
-  left: 9%;
-  mix-blend-mode: screen;
+    transition: opacity 0.2s;
+    width: 2%;
+    height: 2%;
+    overflow: hidden;
+    background: lightblue;
+    position: absolute;
+    top: 19.3%;
+    left: 9%;
+    mix-blend-mode: screen;
 }
 
 #simContainer btn {
@@ -360,7 +372,7 @@ canvas:fullscreen{
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
-    --background: rgba(255,255,255,0.5);
+    --background: rgba(255, 255, 255, 0.5);
 }
 
 #simContainer btn:active {
@@ -382,7 +394,7 @@ body.debug #ideContainer,
     display: flex !important;
 }
 
-#qrc{
+#qrc {
     display: none;
 }
 
@@ -424,13 +436,13 @@ body.debug #ideContainer,
 #ideContainer[data-tab=source] #sourceContainer,
 #ideContainer[data-tab=state] #stateContainer,
 #ideContainer[data-tab=ram] #ramContainer,
-#ideContainer[data-tab=qr] #qrcContainer
-{
+#ideContainer[data-tab=qr] #qrcContainer {
     display: flex;
     height: auto;
     flex-grow: 1;
     flex-basis: auto;
 }
+
 #ideContainer[data-tab=da] #stateContainer {
     display: flex;
     position: fixed;
@@ -444,18 +456,19 @@ body.debug #ideContainer,
 
 @media (min-aspect-ratio: 1/1) {
     #ideContainer[data-tab=da] #stateContainer {
-	top: auto;
-	bottom: 0;	
+        top: auto;
+        bottom: 0;
     }
 }
 
 #ideContainer[data-tab=da] #stateContainer .tabs {
-  display: none;
+    display: none;
 }
+
 #ideContainer[data-tab=da] #stateContainer ul {
-  margin: 0;
-  height: 100%;
-  padding: 10px 0;
+    margin: 0;
+    height: 100%;
+    padding: 10px 0;
 }
 
 #ideContainer[data-tab=da] #state li {
@@ -466,7 +479,9 @@ body.debug #ideContainer,
     font-size: 12px;
 }
 
-#history, #da, #state {
+#history,
+#da,
+#state {
     position: relative;
     overflow: auto;
     background: #123;
@@ -478,15 +493,18 @@ body.debug #ideContainer,
     overflow: hidden;
 }
 
-#history li, #da li, #state li {
+#history li,
+#da li,
+#state li {
     cursor: pointer;
     padding: 0 25px;
     font-family: monospace;
     font-size: 12px;
 }
 
-#history li:hover, #da li:hover {
-    background: #789;    
+#history li:hover,
+#da li:hover {
+    background: #789;
 }
 
 #history li:after {
@@ -496,7 +514,7 @@ body.debug #ideContainer,
 #ideContainer .tabs {
     min-height: 30px;
     max-height: 30px;
-    align-items: center;    
+    align-items: center;
 }
 
 .tabs button {
@@ -507,7 +525,7 @@ body.debug #ideContainer,
     margin: 2px;
 }
 
-*[data-pixelated=true]{
+*[data-pixelated=true] {
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     -ms-interpolation-mode: nearest-neighbor;
@@ -546,7 +564,7 @@ body.debug #ideContainer,
     font-size: 18px;
 }
 
-#da li .commentContainer {    
+#da li .commentContainer {
     position: absolute;
     background-color: #111;
     color: #456;
@@ -583,19 +601,19 @@ body.debug #ideContainer,
     position: absolute;
     width: 740px;
     background: #234;
-    margin-left: 15px;    
+    margin-left: 15px;
 }
 
 #RAM li {
     float: left;
-    padding:3px;
-    margin:0px;
-    width:16px;
-    height:16px;
-    overflow:hidden;
+    padding: 3px;
+    margin: 0px;
+    width: 16px;
+    height: 16px;
+    overflow: hidden;
 }
 
-#RAM li:nth-child(16n){
+#RAM li:nth-child(16n) {
     margin-right: 10px;
 }
 
@@ -620,18 +638,18 @@ body.debug #ideContainer,
     cursor: pointer;
 }
 
-.unconditional{ 
-    border-radius: 20px 0px 0px 20px; 
-    box-shadow: 0px 0px 1px 1px red inset; 
+.unconditional {
+    border-radius: 20px 0px 0px 20px;
+    box-shadow: 0px 0px 1px 1px red inset;
 }
 
-.paused{
+.paused {
     background: aquamarine;
 }
 
-.invalid{ 
-    border-radius: 20px 0px 0px 20px; 
-    box-shadow: 0px 0px 1px 1px yellow inset; 
+.invalid {
+    border-radius: 20px 0px 0px 20px;
+    box-shadow: 0px 0px 1px 1px yellow inset;
 }
 
 #flashContainer {
@@ -680,28 +698,28 @@ body.debug #ideContainer,
 }
 
 #codeToolTip {
-	background-color: #FFF;
-	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
-	background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
-	border: 1px solid gray;
-	border-radius: 1px;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-	color: black;
-	max-width: 100%;
-	padding: 3px 4px;
-	position: absolute;
-	z-index: 999999;
-	-moz-box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	box-sizing: border-box;
-	cursor: default;
-	white-space: pre;
-	word-wrap: break-word;
-	line-height: normal;
-	font-style: normal;
-	font-weight: normal;
-	letter-spacing: normal;
-	pointer-events: none;
+    background-color: #FFF;
+    background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));
+    background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
+    border: 1px solid gray;
+    border-radius: 1px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: black;
+    max-width: 100%;
+    padding: 3px 4px;
+    position: absolute;
+    z-index: 999999;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    cursor: default;
+    white-space: pre;
+    word-wrap: break-word;
+    line-height: normal;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
+    pointer-events: none;
 }
 
 #codeToolTip:after {
@@ -721,8 +739,8 @@ body.debug #ideContainer,
     display: block;
 }
 
-#content h2, #content
- h3 {
+#content h2,
+#content h3 {
     display: inline;
 }
 
@@ -783,7 +801,9 @@ log {
     overflow: auto;
 }
 
-.reponav li, .linknav li, .projectsnav li {
+.reponav li,
+.linknav li,
+.projectsnav li {
     list-style: none;
     margin: 10px;
     cursor: pointer;
@@ -801,17 +821,17 @@ log {
 
 @media (max-aspect-ratio: 1/1) {
     #envContainer h1:after {
-        content:"🍔";
+        content: "🍔";
         float: right;
         margin: 0 20px;
     }
 
-    #main{
+    #main {
         display: block;
         flex-grow: 1;
     }
 
-    #leftbar{
+    #leftbar {
         position: absolute;
         z-index: 1;
         right: 20px;
@@ -822,13 +842,13 @@ log {
     }
 
     .hamburger #leftbar {
-	display: block;
+        display: block;
     }
 
     #content {
-	position: absolute;
-	width: 100%;
-	height: 100%;
+        position: absolute;
+        width: 100%;
+        height: 100%;
     }
 }
 
@@ -838,7 +858,7 @@ log {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.5);
     display: none;
 }
 
@@ -881,7 +901,7 @@ log {
 
 #preview .images img {
     height: 90%;
-    image-rendering:  pixelated;
+    image-rendering: pixelated;
 }
 
 #preview h2 {
@@ -916,7 +936,7 @@ log {
 #preview .actions {
     position: absolute;
     bottom: 0;
-    width: 100%;    
+    width: 100%;
 }
 
 .actions .item {
@@ -930,61 +950,3 @@ log {
     cursor: pointer;
     text-decoration: none;
 }
-
-/* Mobile itch.io Iframe Overlay */
-#mobileIframeOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.90);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999999;
-    cursor: pointer;
-    text-align: center;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-}
-
-.mobileIframeBox {
-    background: #0f0f14;
-    border: 2px solid #ffffff;
-    box-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
-    border-radius: 12px;
-    padding: 28px 36px;
-    max-width: 85%;
-    animation: pulseGlow 1.8s infinite ease-in-out;
-}
-
-@keyframes pulseGlow {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); }
-    50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255, 255, 255, 0.55); }
-}
-
-.mobileIframeIcon {
-    font-size: 42px;
-    color: #ffffff;
-    margin-bottom: 12px;
-    line-height: 1;
-}
-
-.mobileIframeTitle {
-    font-family: monospace, sans-serif;
-    font-size: 16px;
-    font-weight: bold;
-    color: #ffffff;
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-}
-
-.mobileIframeSub {
-    font-family: monospace, sans-serif;
-    font-size: 12px;
-    color: #aaaaaa;
-    letter-spacing: 1px;
-}
-

@@ -9,7 +9,7 @@ Most urgent tasks, ordered by priority (p1 > p2).
 - [x] Fix sprites transparency to no transparency and add outline, except the whitehole.
 - [x] Add player animation for 8 directions, use placeholders for now (current and mirrored current).
 - [x] Add method for detecting user's device: desktop or mobile to display different screens in itch.io's game iframe. Just like the GB Studio HTML export.
-IMPORTANT: Add this adjustments to the source version from the original Arduboy emulator GitHub repository or the most popular/recent fork. 
+- [ ] Upstream web emulator adjustments (responsive device auto-detection, touch latching, direct handheld mobile skin) to the source ProjectABE emulator repository (felipemanga/ProjectABE or its most popular/recent fork).
 - [ ] Continue with milestones [M3 - M5].
 - [ ] Fix player controller input for movement, still feels like a car (accelerate, brake).
 

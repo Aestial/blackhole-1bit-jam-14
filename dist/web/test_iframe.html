@@ -85,7 +85,7 @@
 <body>
     <header>
         <h2>itch.io Embed Simulation Framework</h2>
-        <div class="desc">Tests responsive behavior, mobile auto-detection, and iframe fullscreen launch</div>
+        <div class="desc">Tests responsive behavior and mobile auto-detection (desktop BareFit vs mobile handheld skin)</div>
         <div class="controls">
             <button id="btnDesktop" class="active" onclick="setMode('desktop')">🖥️ Desktop Embed (640 × 360)</button>
             <button id="btnMobile" onclick="setMode('mobile')">📱 Mobile Embed (375 × 667)</button>
@@ -110,7 +110,7 @@
                 frame.src = 'index.html?mode=mobile';
                 btnDesktop.classList.remove('active');
                 btnMobile.classList.add('active');
-                infoBar.textContent = 'Mode: Mobile Embed (Arduboy Handheld Overlay -> Fullscreen Standalone)';
+                infoBar.textContent = 'Mode: Mobile Embed (Arduboy Handheld Skin with Direct Touch Controls)';
             } else {
                 frame.style.width = '640px';
                 frame.style.height = '360px';

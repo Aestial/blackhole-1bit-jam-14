@@ -56,10 +56,10 @@ Matching the seamless device responsiveness of **GB Studio HTML exports**, the e
    - **Touch Input Latching (~55ms)**: Guarantees even instantaneous sub-frame taps are detected by the Arduboy 60 FPS polling cycle without missed inputs.
    - Prevents scroll/zoom gestures with `touch-action: none`.
 
-3. **itch.io Mobile Iframe Handling**:
-   - When embedded inside an iframe on a mobile device (`window !== window.top`), touch scrolling and iframe gestures can disrupt gameplay.
-   - The emulator displays a sleek, retro **"TAP TO PLAY FULLSCREEN"** overlay. Tapping it opens the mobile standalone emulator in a dedicated browser tab for an uninhibited handheld gaming experience.
-   - In desktop iframes, the game runs directly inside the itch.io embed with unrestricted keyboard controls.
+3. **Seamless itch.io Mobile Embed (Zero Redundant Prompts)**:
+   - itch.io mobile game pages already feature a native browser action button to launch and fullscreen embedded games.
+   - To avoid redundant prompts, the emulator immediately displays the full Arduboy handheld skin (`Arduboy (8).png`) with interactive touch controls, ready for play.
+   - In desktop embeds, the game runs directly with unrestricted keyboard controls on the pure OLED display.
 
 4. **URL Overrides & In-Browser Toggle**:
    - Force Desktop: `?skin=bare` or `?mode=desktop`
