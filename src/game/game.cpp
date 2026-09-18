@@ -75,6 +75,12 @@ void Game::reset() {
     score = 0;
     comboMultiplier = 1;
 
+    // M3: Initialize accretion particles
+    for (uint8_t i = 0; i < MAX_GRAVITY_PARTICLES; i++) {
+        particles[i].life = 0;
+    }
+    particleSpawnTimer = 0;
+
     // Pre-populate 2 spacious items across the plane:
     // 1. Diamond in the whitehole risk-reward orbit (52px from whitehole, safe from 30px charge)
     // 2. Pizza hazard ahead in the flight path (>70px away from Diamond)
@@ -244,15 +250,40 @@ void Game::updatePlaying(HalInput& input, fp_t dt) {
         world.resetSpawnTimer();
     }
 
-    // 5. Apply blackhole gravity to entities
-    // TODO(M3): Uncomment when ready
-    //   for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
-    //     if (entities.entities[i].active) {
-    //       applyBlackholeGravity(entities.entities[i].x, entities.entities[i].y,
-    //                              world.bhX, world.bhY,
-    //                              world.bhMass, world.bhCharge);
-    //     }
-    //   }
+    // 5. Apply blackhole gravity to entities (M3: enabled)
+    for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
+        if (entities.entities[i].active) {
+            applyBlackholeGravity(entities.entities[i].x, entities.entities[i].y,
+                                   world.bhX, world.bhY,
+                                   world.bhMass, world.bhCharge, dt);
+
+            // M3: Absorb entities that fall into the whitehole core
+            if (approxDistance(entities.entities[i].x, entities.entities[i].y,
+                               world.bhX, world.bhY) < INT_TO_FP32(BH_ABSORB_RADIUS)) {
+                entities.despawn(i);
+            }
+        }
+    }
+
+    // 5b. Apply soft gravity pull on the player (M3: 25% of entity strength)
+    {
+        fp32_t dist = approxDistance(player.x, player.y, world.bhX, world.bhY);
+        if (dist < world.bhCharge && dist > INT_TO_FP32(BH_ABSORB_RADIUS)) {
+            fp32_t pullFactor = world.bhCharge - dist;
+            fp32_t dx = world.bhX - player.x;
+            fp32_t dy = world.bhY - player.y;
+            fp_t effMass = FP_MUL(FP_MUL(world.bhMass, BH_PLAYER_GRAVITY_SCALE), dt);
+            fp32_t moveX = (dx * (fp32_t)effMass) / dist;
+            fp32_t moveY = (dy * (fp32_t)effMass) / dist;
+            moveX = (moveX * pullFactor) / world.bhCharge;
+            moveY = (moveY * pullFactor) / world.bhCharge;
+            player.x += moveX;
+            player.y += moveY;
+        }
+    }
+
+    // 5c. Update accretion particles (M3)
+    updateParticles(dt);
 
     // 6. Check player-entity collisions
     for (uint8_t i = 0; i < MAX_ENTITIES; i++) {
@@ -312,6 +343,7 @@ void Game::renderPlaying(HalRenderer& renderer) {
     renderBackground(renderer);
     renderEntities(renderer);
     renderBlackhole(renderer);
+    renderParticles(renderer);  // M3: accretion disk particles
     renderPlayer(renderer);
     renderHUD(renderer);
 }
@@ -357,38 +389,89 @@ void Game::renderGameOver(HalRenderer& renderer) {
 
 void Game::renderBackground(HalRenderer& renderer) {
     // =========================================================================
-    // Pseudo-3D Perspective Ground Grid (Full-Screen, No Visible Horizon)
+    // Pseudo-3D Perspective Ground Grid with Spacetime Curvature (M4)
     // =========================================================================
     // The vanishing point (HORIZON_Y) is above the screen, so the entire
-    // 128×64 display is ground plane. Perspective rays converge toward the
-    // off-screen vanishing point, and depth lines use quadratic foreshortening.
-    // Objects naturally recede toward the top of the screen and scroll off.
+    // 128×64 display is ground plane. Grid lines are distorted toward the
+    // whitehole position, creating a gravitational lensing / spacetime
+    // curvature visual effect. Distortion scales with bhCharge over time.
 
     // 1. Horizon line (only drawn if vanishing point is on-screen)
     if (HORIZON_Y >= 0) {
         renderer.drawLine(0, HORIZON_Y, SCREEN_W - 1, HORIZON_Y, COLOR_WHITE);
     }
 
-    // 2. Perspective rays converging toward vanishing point (scrolling with camX)
+    // 2. Compute whitehole screen position for grid distortion (M4)
+    int16_t bhSX = world.worldToScreenX(world.bhX, world.bhY);
+    int16_t bhSY = world.worldToScreenY(world.bhY);
+
+    // Distortion strength scales with bhCharge (grows over time)
+    // Visible from the start but subtle — DIVISOR keeps initial values low
+    int16_t distortStrength = (int16_t)(FP_TO_INT(world.bhCharge) / GRID_DISTORT_DIVISOR);
+    if (distortStrength > GRID_DISTORT_MAX_STRENGTH) {
+        distortStrength = GRID_DISTORT_MAX_STRENGTH;
+    }
+    int16_t distortRadiusSq = (int16_t)GRID_DISTORT_RADIUS * GRID_DISTORT_RADIUS;
+
+    // 3. Perspective rays converging toward vanishing point (scrolling with camX)
+    //    M4: Ray endpoints are distorted toward the whitehole (gravitational lensing)
     int16_t camX_int = (int16_t)FP32_TO_INT(world.camX);
     int16_t xOffset = camX_int % BASE_SPACING_X;
     if (xOffset < 0) xOffset += BASE_SPACING_X;
 
-    for (int16_t bx = -xOffset - BASE_SPACING_X * 2; bx <= SCREEN_W + BASE_SPACING_X * 2; bx += BASE_SPACING_X) {
+    for (int16_t bx = -xOffset - BASE_SPACING_X * 2;
+         bx <= SCREEN_W + BASE_SPACING_X * 2;
+         bx += BASE_SPACING_X) {
+
         int16_t tx = (SCREEN_W / 2) + ((bx - (SCREEN_W / 2)) * TOP_SPACING_X) / BASE_SPACING_X;
-        renderer.drawLine(tx, HORIZON_Y, bx, SCREEN_H - 1, COLOR_WHITE);
+
+        // M4: Bend top and bottom endpoints toward whitehole
+        int16_t txD = applyGridDistortion(tx, HORIZON_Y, bhSX, bhSY, distortStrength, distortRadiusSq);
+        int16_t bxD = applyGridDistortion(bx, SCREEN_H - 1, bhSX, bhSY, distortStrength, distortRadiusSq);
+
+        renderer.drawLine(txD, HORIZON_Y, bxD, SCREEN_H - 1, COLOR_WHITE);
     }
 
-    // 3. Quadratic foreshortened depth lines (scrolling with camY)
+    // 4. Quadratic foreshortened depth lines (scrolling with camY)
+    //    M4: Drawn as segmented polylines with per-segment distortion toward whitehole
     int16_t camY_int = (int16_t)FP32_TO_INT(world.camY);
     int16_t zOffset = camY_int % Z_PERIOD;
     if (zOffset < 0) zOffset += Z_PERIOD;
 
+    int16_t segW = SCREEN_W / GRID_HSEG_COUNT;
+
     for (int16_t z = Z_PERIOD - zOffset; z <= PERSPECTIVE_MAX_Z; z += Z_PERIOD) {
         int32_t z32 = z;
         int16_t yLine = HORIZON_Y + (int16_t)(((int32_t)GROUND_HEIGHT * z32 * z32) / PERSPECTIVE_MAX_Z_SQ);
-        if (yLine > 0 && yLine < SCREEN_H) {
-            renderer.drawLine(0, yLine, SCREEN_W - 1, yLine, COLOR_WHITE);
+        if (yLine <= 0 || yLine >= SCREEN_H) continue;
+
+        // Draw distorted horizontal line as segmented polyline
+        int16_t prevX = 0;
+        int16_t prevY = yLine;
+
+        for (uint8_t s = 1; s <= GRID_HSEG_COUNT; s++) {
+            int16_t cx = (s == GRID_HSEG_COUNT) ? (SCREEN_W - 1) : (s * segW);
+            int16_t cy = yLine;
+
+            // Distort this control point toward whitehole
+            int16_t dxBh = cx - bhSX;
+            int16_t dyBh = cy - bhSY;
+            int32_t d2 = (int32_t)dxBh * dxBh + (int32_t)dyBh * dyBh;
+
+            if (d2 > 0 && d2 < (int32_t)distortRadiusSq) {
+                // Linear falloff: stronger distortion closer to whitehole
+                int32_t factor = (int32_t)distortRadiusSq - d2;
+                int16_t shiftX = (int16_t)(((int32_t)(-dxBh) * distortStrength * factor) /
+                                           ((int32_t)distortRadiusSq * 64));
+                int16_t shiftY = (int16_t)(((int32_t)(-dyBh) * distortStrength * factor) /
+                                           ((int32_t)distortRadiusSq * 64));
+                cx += shiftX;
+                cy += shiftY;
+            }
+
+            renderer.drawLine(prevX, prevY, cx, cy, COLOR_WHITE);
+            prevX = cx;
+            prevY = cy;
         }
     }
 }
@@ -582,6 +665,129 @@ void Game::renderHUD(HalRenderer& renderer) {
     } else if (player.isBoosted()) {
         renderer.print(" !");
     }
+}
+
+// =============================================================================
+// ACCRETION PARTICLE SYSTEM (M3)
+// =============================================================================
+// Lightweight particle system for the whitehole accretion disk visual effect.
+// Particles spawn on the charge radius perimeter and spiral inward with orbital
+// tangential drift. Each particle is a single white pixel with flicker effect.
+//
+// FOR FUTURE AGENTS / TUNING:
+//   - PARTICLE_GRAVITY_MULT controls how fast particles spiral inward (3x default)
+//   - PARTICLE_ORBITAL_SPEED controls tangential rotation speed
+//   - PARTICLE_LIFETIME controls how long particles live before fading
+//   - PARTICLE_SPAWN_INTERVAL controls spawn rate (lower = more particles visible)
+//   - If particles look too sparse, reduce PARTICLE_SPAWN_INTERVAL or increase MAX_GRAVITY_PARTICLES
+//   - If CPU is tight, reduce MAX_GRAVITY_PARTICLES or increase PARTICLE_SPAWN_INTERVAL
+
+void Game::spawnParticle() {
+    for (uint8_t i = 0; i < MAX_GRAVITY_PARTICLES; i++) {
+        if (particles[i].life == 0) {
+            // Spawn at random angle on the whitehole's charge radius perimeter
+            uint8_t angle = (uint8_t)(world.nextRandom() & 255);
+            int16_t chargePixels = FP_TO_INT(world.bhCharge);
+            if (chargePixels < 20) chargePixels = 20;  // Minimum visual radius
+
+            // Use 16-point unit circle lookup for position on perimeter
+            uint8_t dir = (angle >> 4) & 15;  // Map 0-255 to 0-15 index
+            int16_t r = chargePixels + (int16_t)(world.randomRange(0, 10));
+            int16_t dx = (int16_t)(((int32_t)UNIT_CIRCLE_X[dir] * r) / 127);
+            int16_t dy = (int16_t)(((int32_t)UNIT_CIRCLE_Y[dir] * r) / 127);
+
+            particles[i].x = world.bhX + INT_TO_FP32(dx);
+            particles[i].y = world.bhY + INT_TO_FP32(dy);
+            particles[i].life = PARTICLE_LIFETIME;
+            particles[i].angle = angle;
+            return;
+        }
+    }
+}
+
+void Game::updateParticles(fp_t dt) {
+    // Spawn new particles periodically
+    particleSpawnTimer++;
+    if (particleSpawnTimer >= PARTICLE_SPAWN_INTERVAL) {
+        particleSpawnTimer = 0;
+        spawnParticle();
+    }
+
+    // Update existing particles: pull toward whitehole center + slight orbital drift
+    for (uint8_t i = 0; i < MAX_GRAVITY_PARTICLES; i++) {
+        if (particles[i].life == 0) continue;
+
+        // Strong inward pull (particles spiral inward faster than entities)
+        applyBlackholeGravity(particles[i].x, particles[i].y,
+                               world.bhX, world.bhY,
+                               FP_MUL(world.bhMass, PARTICLE_GRAVITY_MULT), world.bhCharge, dt);
+
+        // Orbital tangential drift (perpendicular to radial direction)
+        fp32_t dx = particles[i].x - world.bhX;
+        fp32_t dy = particles[i].y - world.bhY;
+        // Tangent vector: (-dy, dx) normalized and scaled
+        fp32_t dist = approxDistance(particles[i].x, particles[i].y, world.bhX, world.bhY);
+        if (dist > FP_ONE) {
+            fp32_t tangentX = (-dy * (fp32_t)PARTICLE_ORBITAL_SPEED) / dist;
+            fp32_t tangentY = (dx * (fp32_t)PARTICLE_ORBITAL_SPEED) / dist;
+            particles[i].x += FP32_MUL(tangentX, dt);
+            particles[i].y += FP32_MUL(tangentY, dt);
+        }
+
+        // Decrement lifetime
+        particles[i].life--;
+
+        // Kill if very close to center (absorbed by whitehole core)
+        if (dist < INT_TO_FP32(3)) {
+            particles[i].life = 0;
+        }
+    }
+}
+
+void Game::renderParticles(HalRenderer& renderer) {
+    for (uint8_t i = 0; i < MAX_GRAVITY_PARTICLES; i++) {
+        if (particles[i].life == 0) continue;
+
+        int16_t sx = world.worldToScreenX(particles[i].x, particles[i].y);
+        int16_t sy = world.worldToScreenY(particles[i].y);
+
+        // Skip if off-screen
+        if (sx < 0 || sx >= SCREEN_W || sy < 0 || sy >= SCREEN_H) continue;
+
+        // Flicker effect: draw every other frame for ethereal look
+        if ((particles[i].life + i) % 2 == 0) {
+            renderer.drawPixel(sx, sy, COLOR_WHITE);
+        }
+    }
+}
+
+// =============================================================================
+// GRID DISTORTION HELPER (M4)
+// =============================================================================
+// Returns a distorted X coordinate for a grid point at (px, py), pulled toward
+// the whitehole screen position (bhSX, bhSY) with linear falloff.
+//
+// FOR FUTURE AGENTS / TUNING:
+//   - If distortion looks too strong, increase the divisor constant (64 below)
+//   - If distortion looks too weak, decrease it or increase GRID_DISTORT_MAX_STRENGTH
+//   - radiusSq should be GRID_DISTORT_RADIUS^2 (precomputed by caller)
+
+int16_t Game::applyGridDistortion(int16_t px, int16_t py,
+                                   int16_t bhSX, int16_t bhSY,
+                                   int16_t strength, int16_t radiusSq) {
+    int16_t dx = px - bhSX;
+    int16_t dy = py - bhSY;
+    int32_t d2 = (int32_t)dx * dx + (int32_t)dy * dy;
+
+    if (d2 <= 0 || d2 >= (int32_t)radiusSq) {
+        return px;  // Outside distortion radius — no effect
+    }
+
+    // Shift X toward whitehole, proportional to (radiusSq - d2) / radiusSq
+    int32_t factor = (int32_t)radiusSq - d2;
+    int16_t shiftX = (int16_t)(((int32_t)(-dx) * strength * factor) /
+                               ((int32_t)radiusSq * 64));
+    return px + shiftX;
 }
 
 // =============================================================================

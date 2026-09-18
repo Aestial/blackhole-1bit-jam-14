@@ -287,6 +287,52 @@ static const uint8_t BH_RENDER_RADIUS = 8;
 static const int16_t BH_START_DISTANCE = 80;
 
 // =============================================================================
+// BLACKHOLE GRAVITY CONSTANTS (M3)
+// =============================================================================
+// BH_ABSORB_RADIUS: Distance (pixels) at which entities touching the whitehole
+// core are consumed/despawned. Creates a visual "absorption" effect.
+static const uint8_t BH_ABSORB_RADIUS = 4;
+
+// BH_PLAYER_GRAVITY_SCALE: Fraction of gravity force applied to the player
+// compared to entities. 0.25 = player feels 25% of the pull. Low enough to
+// be escapable with A + direction, high enough to create tension.
+static const fp_t BH_PLAYER_GRAVITY_SCALE = FLOAT_TO_FP(0.3);
+
+// =============================================================================
+// ACCRETION PARTICLE CONSTANTS (M3)
+// =============================================================================
+// Lightweight particle system for the whitehole accretion disk visual effect.
+// Particles spawn on the charge radius perimeter and spiral inward with orbital
+// tangential drift, creating a swirling visual aura around the whitehole.
+// Each particle is a single white pixel that flickers for an ethereal look.
+static const uint8_t MAX_GRAVITY_PARTICLES =
+    8; // Number of particle slots (80 bytes RAM)
+static const uint8_t PARTICLE_LIFETIME =
+    90; // Frames before particle fades (~1.5 sec)
+static const uint8_t PARTICLE_SPAWN_INTERVAL =
+    8; // Frames between new particle spawns
+static const fp_t PARTICLE_GRAVITY_MULT =
+    FLOAT_TO_FP(3.0); // Particles pulled 3x stronger than entities
+static const fp_t PARTICLE_ORBITAL_SPEED =
+    FLOAT_TO_FP(0.5); // Tangential orbital speed (px/frame)
+
+// =============================================================================
+// GRID DISTORTION CONSTANTS (M4 — SPACETIME CURVATURE)
+// =============================================================================
+// The perspective ground grid warps toward the whitehole, creating a visual
+// "spacetime curvature" effect. Distortion strength scales with bhCharge
+// (grows over time), so the effect becomes more dramatic as the game
+// progresses. Visible from the start but subtle — the DIVISOR keeps initial
+// values low.
+static const uint8_t GRID_DISTORT_DIVISOR =
+    4; // bhCharge / this = distortion strength
+static const uint8_t GRID_DISTORT_MAX_STRENGTH =
+    16; // Cap on distortion intensity (pixels)
+static const uint8_t GRID_DISTORT_RADIUS =
+    80; // Screen-space radius of distortion effect (px)
+static const uint8_t GRID_HSEG_COUNT = 8; // Segments per horizontal depth line
+
+// =============================================================================
 // SPAWNING CONSTANTS
 // =============================================================================
 // Entities spawn around the player, ahead of movement direction.
