@@ -56,8 +56,9 @@ Automated build and emulation script for Supermassive Whitehole (Arduboy).
 
 Options:
   --skin <bare|arduboy>   Emulator skin mode:
-                            'bare'    : Pure game screen, no skin (default)
-                            'arduboy' : Smallest Arduboy skin (Arduboy-off.png)
+                            'bare'    : Pure game screen, no skin (default on desktop)
+                            'arduboy' : Handheld Arduboy skin with buttons (Arduboy (8).png, default on mobile)
+  --mobile                Shortcut for '--skin arduboy'
   -b, --build-only        Compile and copy binaries only, skip emulator launch
   -p, --port <port>       HTTP server port (default: 8000)
   -c, --clean             Clean build directory before compiling
@@ -66,7 +67,8 @@ Options:
 
 Examples:
   ./build.sh                      # Build and launch clean game screen
-  ./build.sh --skin arduboy       # Build and launch with Arduboy-off skin
+  ./build.sh --mobile             # Build and launch with Arduboy (8) skin and buttons
+  ./build.sh --skin arduboy       # Build and launch with Arduboy (8) skin
   ./build.sh --build-only         # Compile and update dist/ without browser
   ./build.sh --package            # Build and create distribution zip for itch.io
 EOF
@@ -82,6 +84,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skin=*)
             SKIN="${1#*=}"
+            shift 1
+            ;;
+        --mobile)
+            SKIN="arduboy"
             shift 1
             ;;
         -b|--build-only)
@@ -181,6 +187,11 @@ cp "${SRC_HEX}" "${ROOT_DIR}/dist/web/ArduboyProject.hex"
 # Also sync to root html5/ if present
 if [ -d "${ROOT_DIR}/html5" ]; then
     cp "${SRC_HEX}" "${ROOT_DIR}/html5/ArduboyProject.hex"
+fi
+
+# Synchronize skin image
+if [ -f "${ROOT_DIR}/html5/Arduboy (8).png" ] && [ ! -f "${ROOT_DIR}/dist/web/Arduboy (8).png" ]; then
+    cp "${ROOT_DIR}/html5/Arduboy (8).png" "${ROOT_DIR}/dist/web/Arduboy (8).png"
 fi
 
 HEX_SIZE=$(stat -c%s "${ROOT_DIR}/dist/supermassive-whitehole.hex" 2>/dev/null || stat -f%z "${ROOT_DIR}/dist/supermassive-whitehole.hex")

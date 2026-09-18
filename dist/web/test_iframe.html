@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>itch.io Simulation Framework</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: #141419;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
+            color: #eee;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        h2 {
+            margin: 0 0 6px 0;
+            font-size: 20px;
+            letter-spacing: 1px;
+            color: #fff;
+        }
+        .desc {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 14px;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        button {
+            background: #23232e;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background: #323242;
+            color: #fff;
+            border-color: #666;
+        }
+        button.active {
+            background: #4f46e5;
+            color: #fff;
+            border-color: #6366f1;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+        }
+        .frame-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        iframe {
+            width: 640px;
+            height: 360px;
+            border: 2px solid #383848;
+            border-radius: 8px;
+            background: #000;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+        .info-bar {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>itch.io Embed Simulation Framework</h2>
+        <div class="desc">Tests responsive behavior and mobile auto-detection (desktop BareFit vs mobile handheld skin)</div>
+        <div class="controls">
+            <button id="btnDesktop" class="active" onclick="setMode('desktop')">🖥️ Desktop Embed (640 × 360)</button>
+            <button id="btnMobile" onclick="setMode('mobile')">📱 Mobile Embed (375 × 667)</button>
+        </div>
+    </header>
+
+    <div class="frame-container">
+        <iframe id="gameFrame" src="index.html" allowfullscreen></iframe>
+        <div class="info-bar" id="infoBar">Mode: Desktop (Pure BareFit OLED Screen)</div>
+    </div>
+
+    <script>
+        function setMode(mode) {
+            var frame = document.getElementById('gameFrame');
+            var btnDesktop = document.getElementById('btnDesktop');
+            var btnMobile = document.getElementById('btnMobile');
+            var infoBar = document.getElementById('infoBar');
+
+            if (mode === 'mobile') {
+                frame.style.width = '375px';
+                frame.style.height = '667px';
+                frame.src = 'index.html?mode=mobile';
+                btnDesktop.classList.remove('active');
+                btnMobile.classList.add('active');
+                infoBar.textContent = 'Mode: Mobile Embed (Arduboy Handheld Skin with Direct Touch Controls)';
+            } else {
+                frame.style.width = '640px';
+                frame.style.height = '360px';
+                frame.src = 'index.html';
+                btnMobile.classList.remove('active');
+                btnDesktop.classList.add('active');
+                infoBar.textContent = 'Mode: Desktop Embed (Pure BareFit OLED Screen)';
+            }
+        }
+
+        // Check if page URL has ?mode=mobile
+        if (/[?&]mode=mobile/i.test(location.search)) {
+            setMode('mobile');
+        }
+    </script>
+</body>
+</html>
