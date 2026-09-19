@@ -4,8 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Supermassive Whitehole - Arduboy</title>
-    <link rel="stylesheet" href="style.css?v=0.3.3">
-    <script src="app.js?v=0.3.3"></script>
+    <script>
+        // GB Studio-style scroll prevention & focus management
+        (function() {
+            var scrollKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "PageUp", "PageDown", "Home", "End"];
+            window.addEventListener("keydown", function(e) {
+                if (scrollKeys.indexOf(e.code) !== -1 || scrollKeys.indexOf(e.key) !== -1 || (e.keyCode >= 37 && e.keyCode <= 40) || e.keyCode === 32) {
+                    e.preventDefault();
+                }
+            }, { passive: false, capture: true });
+
+            // Auto-focus window when clicked or touched to ensure keyboard inputs are captured
+            function ensureFocus() {
+                if (window.focus) window.focus();
+                document.body.classList.add("game-focused");
+            }
+            window.addEventListener("pointerdown", ensureFocus, { passive: true });
+            window.addEventListener("click", ensureFocus, { passive: true });
+            window.addEventListener("focus", function() {
+                document.body.classList.add("game-focused");
+            });
+            window.addEventListener("blur", function() {
+                document.body.classList.remove("game-focused");
+            });
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css?v=0.3.4">
+    <script src="app.js?v=0.3.4"></script>
 </head>
 <body data-inject="App">
 </body>

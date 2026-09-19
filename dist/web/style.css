@@ -9,6 +9,34 @@ body {
     font-size: 1em;
     background-color: black;
     color: #DEF;
+    overflow: hidden;
+    cursor: none;
+}
+
+/* Hide mouse cursor over game screen and simulation viewport (GB Studio behavior) */
+#simBox,
+#simContainer,
+canvas#screen,
+body.game-focused,
+body.game-focused #simContainer,
+body.game-focused canvas#screen {
+    cursor: none !important;
+}
+
+/* Maintain visible and functional cursors if debugger / IDE is opened */
+#ideContainer,
+#ideContainer * {
+    cursor: auto;
+}
+#ideContainer button,
+#ideContainer select,
+#ideContainer li {
+    cursor: pointer;
+}
+#ideContainer input,
+#ideContainer textarea,
+#ideContainer #ace {
+    cursor: text;
 }
 
 #getNative {

@@ -61,7 +61,12 @@ Matching the seamless device responsiveness of **GB Studio HTML exports**, the e
    - To avoid redundant prompts, the emulator immediately displays the full Arduboy handheld skin (`Arduboy (8).png`) with interactive touch controls, ready for play.
    - In desktop embeds, the game runs directly with unrestricted keyboard controls on the pure OLED display.
 
-4. **URL Overrides & In-Browser Toggle**:
+4. **itch.io Embed Scroll Prevention & Cursor Hiding (GB Studio Behavior)**:
+   - **Container Scroll Lock**: Prevents the host webpage (e.g. itch.io) from scrolling when pressing navigation keys (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`, `Space`, `PageUp`, `PageDown`, `Home`, `End`). Implemented via early window-level capture listeners and patched `app.js` `initKeyboard()` handlers so `evt.preventDefault()` is guaranteed to execute.
+   - **Cursor Hiding**: Automatically hides the mouse pointer over the game screen and emulator viewport (`cursor: none !important`), eliminating visual clutter on the retro 1-bit canvas just like GB Studio. If the developer debugger (`#ideContainer`) is toggled open, standard cursors (`auto`, `pointer`, `text`) are automatically restored.
+   - **Focus Latching**: When the player clicks or taps anywhere within the game embed, `window.focus()` and the `.game-focused` state latch immediately so keyboard inputs are received without requiring multiple clicks.
+
+5. **URL Overrides & In-Browser Toggle**:
    - Force Desktop: `?skin=bare` or `?mode=desktop`
    - Force Mobile: `?skin=arduboy` or `?mode=mobile`
    - Press <kbd>F3</kbd> in a desktop browser at any time to toggle skins.

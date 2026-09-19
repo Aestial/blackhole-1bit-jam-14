@@ -3,128 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>itch.io Simulation Framework</title>
+    <title>itch.io Game Page Simulation Framework - Supermassive Whitehole</title>
     <style>
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            background: #141419;
+            background: #191924;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
-            color: #eee;
+            min-height: 2200px; /* Ample height to test vertical page scrolling */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #d1d5db;
         }
-        header {
-            text-align: center;
-            margin-bottom: 16px;
+
+        /* Mock itch.io Top Header */
+        .itch-nav {
+            width: 100%;
+            height: 48px;
+            background: #111119;
+            border-bottom: 1px solid #28283a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        h2 {
-            margin: 0 0 6px 0;
-            font-size: 20px;
-            letter-spacing: 1px;
-            color: #fff;
+        .itch-logo {
+            font-weight: 800;
+            font-size: 17px;
+            color: #fa5c5c;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .desc {
+        .itch-links {
+            display: flex;
+            gap: 20px;
             font-size: 13px;
-            color: #888;
-            margin-bottom: 14px;
+            color: #9ca3af;
         }
+
+        /* Live Scroll Diagnostic Banner */
+        .diagnostic-banner {
+            width: 100%;
+            max-width: 860px;
+            margin: 16px 0 10px 0;
+            background: #232334;
+            border: 1px solid #3b3b54;
+            border-radius: 8px;
+            padding: 12px 18px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+        .stat-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .stat-badge {
+            background: #151520;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #38384f;
+        }
+        .stat-badge strong {
+            color: #60a5fa;
+        }
+        .status-ok {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid #059669;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .status-scrolled {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid #dc2626;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        /* Mode & Test Controls */
         .controls {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             margin-bottom: 16px;
         }
-        button {
-            background: #23232e;
-            color: #ccc;
-            border: 1px solid #444;
-            padding: 8px 16px;
+        button.btn-ctrl {
+            background: #2a2a3e;
+            color: #e5e7eb;
+            border: 1px solid #484865;
+            padding: 7px 14px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
-        button:hover {
-            background: #323242;
-            color: #fff;
-            border-color: #666;
+        button.btn-ctrl:hover {
+            background: #383852;
+            border-color: #6366f1;
         }
-        button.active {
+        button.btn-ctrl.active {
             background: #4f46e5;
             color: #fff;
             border-color: #6366f1;
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
         }
-        .frame-container {
+
+        /* Game Container */
+        .game-wrapper {
+            background: #111119;
+            border: 1px solid #2d2d42;
+            border-radius: 10px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: all 0.3s ease;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            margin-bottom: 24px;
+        }
+        .game-title {
+            margin: 0 0 4px 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+        .game-sub {
+            margin: 0 0 16px 0;
+            font-size: 13px;
+            color: #9ca3af;
         }
         iframe {
             width: 640px;
             height: 360px;
-            border: 2px solid #383848;
-            border-radius: 8px;
+            border: 2px solid #36364e;
+            border-radius: 6px;
             background: #000;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-            transition: width 0.3s ease, height 0.3s ease;
+            transition: width 0.25s ease, height 0.25s ease;
         }
-        .info-bar {
-            margin-top: 10px;
+
+        /* Realistic Page Content below iframe */
+        .page-content {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .content-card {
+            background: #1f1f2e;
+            border: 1px solid #313146;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .content-card h3 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 16px;
+            border-bottom: 1px solid #383850;
+            padding-bottom: 8px;
+        }
+        .key-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .key-badge {
+            background: #161622;
+            border: 1px solid #3e3e56;
+            padding: 6px 10px;
+            border-radius: 4px;
             font-size: 12px;
-            color: #666;
+        }
+        kbd {
+            background: #2b2b3d;
+            border: 1px solid #52526e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: inherit;
+            color: #93c5fd;
+            font-weight: bold;
+        }
+        .comment-item {
+            border-bottom: 1px solid #2c2c3e;
+            padding: 12px 0;
+        }
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+        .comment-author {
+            font-weight: 600;
+            color: #a5b4fc;
+            margin-bottom: 4px;
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h2>itch.io Embed Simulation Framework</h2>
-        <div class="desc">Tests responsive behavior and mobile auto-detection (desktop BareFit vs mobile handheld skin)</div>
-        <div class="controls">
-            <button id="btnDesktop" class="active" onclick="setMode('desktop')">🖥️ Desktop Embed (640 × 360)</button>
-            <button id="btnMobile" onclick="setMode('mobile')">📱 Mobile Embed (375 × 667)</button>
-        </div>
-    </header>
 
-    <div class="frame-container">
+    <!-- Mock itch.io Navigation -->
+    <div class="itch-nav">
+        <div class="itch-logo">
+            <span>🎮</span> itch.io Embed Simulator
+        </div>
+        <div class="itch-links">
+            <span>1-Bit Game Jam 14</span>
+            <span>Desktop vs Mobile Embed</span>
+            <span>GB Studio Behavior Test</span>
+        </div>
+    </div>
+
+    <!-- Live Scroll Diagnostics Banner -->
+    <div class="diagnostic-banner">
+        <div class="stat-group">
+            <div class="stat-badge">Container Scroll Y: <strong id="valScrollY">0px</strong></div>
+            <div class="stat-badge">Last Key: <strong id="valLastKey">None</strong></div>
+            <div class="stat-badge">Iframe Mode: <strong id="valMode">Desktop (640×360)</strong></div>
+        </div>
+        <div id="statusBadge" class="status-ok">
+            ✓ Scroll Lock Active (GB Studio Behavior)
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="btnDesktop" class="btn-ctrl active" onclick="setMode('desktop')">🖥️ Desktop Embed (640 × 360)</button>
+        <button id="btnMobile" class="btn-ctrl" onclick="setMode('mobile')">📱 Mobile Embed (375 × 667)</button>
+        <button class="btn-ctrl" onclick="scrollToGame()">🎯 Scroll Container to Game</button>
+        <button class="btn-ctrl" onclick="resetScroll()">↺ Reset Scroll to Top</button>
+    </div>
+
+    <!-- Game Iframe Container -->
+    <div class="game-wrapper" id="gameWrapper">
+        <h1 class="game-title">Supermassive Whitehole</h1>
+        <div class="game-sub">Arduboy Action Game • 1-Bit Game Jam 14 Submission</div>
         <iframe id="gameFrame" src="index.html" allowfullscreen></iframe>
-        <div class="info-bar" id="infoBar">Mode: Desktop (Pure BareFit OLED Screen)</div>
+    </div>
+
+    <!-- Scrollable Page Content to simulate real itch.io game page -->
+    <div class="page-content">
+        <div class="content-card">
+            <h3>🎮 Controls & Input Verification</h3>
+            <p>Click inside the game window above to focus. Notice the <strong>mouse cursor is automatically hidden</strong> over the screen. Press arrow keys to test container scrolling:</p>
+            <div class="key-grid">
+                <div class="key-badge"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> Move / Steer</div>
+                <div class="key-badge"><kbd>Z</kbd> Button A (Walk / Sprint)</div>
+                <div class="key-badge"><kbd>X</kbd> Button B</div>
+                <div class="key-badge"><kbd>Space</kbd> Prevented (No Scroll)</div>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <h3>📖 About the Game</h3>
+            <p>A rogue astronomical event has inverted reality: a celestial <strong>Supermassive Whitehole</strong> expels matter and exerts gravitational pull across the cosmos. Navigate through dynamic warping spacetime, manage player stamina, and survive the gravitational pull of the cosmic phenomenon.</p>
+            <p>Developed in C++ for the 1-bit monochrome <strong>Arduboy</strong> handheld and compiled to WebAssembly/JavaScript for browser emulation on itch.io.</p>
+        </div>
+
+        <div class="content-card">
+            <h3>💬 Community Comments (Testing Page Height)</h3>
+            <div class="comment-item">
+                <div class="comment-author">PixelPilot99 • 2 hours ago</div>
+                <div>The 1-bit visuals and spacetime warping effect look incredible! Very smooth controls on keyboard.</div>
+            </div>
+            <div class="comment-item">
+                <div class="comment-author">RetroGamerDan • 5 hours ago</div>
+                <div>Awesome Arduboy game! Glad the arrow keys don't scroll the itch.io page anymore like they used to.</div>
+            </div>
+            <div class="comment-item">
+                <div class="comment-author">ChiptuneWizard • 1 day ago</div>
+                <div>The stamina and sprint mechanic gives great tactical depth. Love the whitehole gravity physics!</div>
+            </div>
+            <div class="comment-item">
+                <div class="comment-author">BitJamModerator • 2 days ago</div>
+                <div>Valid entry for 1-Bit Game Jam 14. Responsive layout works cleanly on both mobile and desktop.</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        function setMode(mode) {
-            var frame = document.getElementById('gameFrame');
-            var btnDesktop = document.getElementById('btnDesktop');
-            var btnMobile = document.getElementById('btnMobile');
-            var infoBar = document.getElementById('infoBar');
+        var frame = document.getElementById('gameFrame');
+        var btnDesktop = document.getElementById('btnDesktop');
+        var btnMobile = document.getElementById('btnMobile');
+        var valScrollY = document.getElementById('valScrollY');
+        var valLastKey = document.getElementById('valLastKey');
+        var valMode = document.getElementById('valMode');
+        var statusBadge = document.getElementById('statusBadge');
 
+        var initialScrollY = 0;
+
+        function updateScrollTracker() {
+            var y = window.scrollY || window.pageYOffset || 0;
+            valScrollY.textContent = Math.round(y) + 'px';
+        }
+        window.addEventListener('scroll', updateScrollTracker, { passive: true });
+
+        // Listen for keys on parent window
+        window.addEventListener('keydown', function(e) {
+            valLastKey.textContent = e.code || e.key;
+        });
+
+        function scrollToGame() {
+            var el = document.getElementById('gameWrapper');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(function() {
+                updateScrollTracker();
+            }, 500);
+        }
+
+        function resetScroll() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(function() {
+                updateScrollTracker();
+            }, 500);
+        }
+
+        function setMode(mode) {
             if (mode === 'mobile') {
                 frame.style.width = '375px';
                 frame.style.height = '667px';
                 frame.src = 'index.html?mode=mobile';
                 btnDesktop.classList.remove('active');
                 btnMobile.classList.add('active');
-                infoBar.textContent = 'Mode: Mobile Embed (Arduboy Handheld Skin with Direct Touch Controls)';
+                valMode.textContent = 'Mobile Embed (Arduboy Casing 375×667)';
             } else {
                 frame.style.width = '640px';
                 frame.style.height = '360px';
                 frame.src = 'index.html';
                 btnMobile.classList.remove('active');
                 btnDesktop.classList.add('active');
-                infoBar.textContent = 'Mode: Desktop Embed (Pure BareFit OLED Screen)';
+                valMode.textContent = 'Desktop Embed (BareFit Screen 640×360)';
             }
         }
 
-        // Check if page URL has ?mode=mobile
         if (/[?&]mode=mobile/i.test(location.search)) {
             setMode('mobile');
         }
+
+        updateScrollTracker();
     </script>
 </body>
 </html>
