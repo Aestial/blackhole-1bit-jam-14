@@ -334,6 +334,49 @@ private:
                               const uint8_t* outline, uint8_t frame,
                               SpriteAlphaMode alphaMode,
                               SpriteOutlineMode outlineMode);
+
+    // =========================================================================
+    // Whitehole Accretion Particles (M3)
+    // =========================================================================
+    // Lightweight particle system for visual accretion disk effect around the
+    // whitehole. Particles spawn on the charge radius perimeter and spiral
+    // inward with orbital tangential drift. Each is a single flickering pixel.
+    //
+    // RAM cost: MAX_GRAVITY_PARTICLES * 10 bytes + 1 byte timer = 81 bytes
+    //
+    // FOR IMPLEMENTING AGENTS:
+    //   - spawnParticle(): Find first dead slot, place on charge perimeter
+    //   - updateParticles(): Apply strong inward gravity + orbital drift
+    //   - renderParticles(): Draw single pixels with flicker effect
+    //   - Called from updatePlaying() and renderPlaying() respectively
+
+    struct GravityParticle {
+        fp32_t x;       // World-space X (Q24.8)
+        fp32_t y;       // World-space Y (Q24.8)
+        uint8_t life;   // Frames remaining (0 = inactive)
+        uint8_t angle;  // Current orbital angle (0-255, for respawn positioning)
+    };
+
+    GravityParticle particles[MAX_GRAVITY_PARTICLES];
+    uint8_t particleSpawnTimer;
+
+    void spawnParticle();
+    void updateParticles(fp_t dt);
+    void renderParticles(HalRenderer& renderer);
+
+    // =========================================================================
+    // Grid Distortion Helper (M4)
+    // =========================================================================
+    // Returns a distorted X coordinate for a grid point at (px, py),
+    // pulled toward the whitehole screen position (bhSX, bhSY).
+    // Uses linear falloff within radiusSq. Returns px unchanged if outside range.
+    //
+    // FOR IMPLEMENTING AGENTS:
+    //   - Called per ray endpoint in renderBackground()
+    //   - Pure function (no side effects), can be static
+    static int16_t applyGridDistortion(int16_t px, int16_t py,
+                                        int16_t bhSX, int16_t bhSY,
+                                        int16_t strength, int16_t radiusSq);
 };
 
 #endif // GAME_H
