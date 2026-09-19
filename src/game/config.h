@@ -145,28 +145,128 @@ static const uint8_t PLAYER_WALK_ANIM_DIVISOR =
 //   - A button (gas/walk) delivers a small grounded impulse per stride
 //   - Small inertia feedback (0.25) gives body weight without car-like sliding
 //   - Natural foot friction (0.040) stops in a few strides when coasting
-//   - B button (brake) plants feet for a quick emergency stop
+//   - Dedicated brake behavior removed (outdated with GTA:SA locomotion)
 //
 // Tuning parameters:
 //   PLAYER_STEP_IMPULSE: Initial stride impulse from standstill (0.25 px/frame)
-//   PLAYER_ACCEL: Continuous stride impulse per frame while A held (0.040
-//   px/frame) PLAYER_FRICTION: Foot drag when coasting (0.040 px/frame, stops
-//   in ~20 frames) PLAYER_BRAKE_FRICTION: Foot-plant drag when B held (0.12
-//   px/frame, stops in ~8 frames) PLAYER_MAX_SPEED: Comfortable human jogging
-//   pace (0.95 px/frame ~= 57 px/sec) PLAYER_INERTIA: Steering blend factor
-//   (0.25 = 75% instant turn, 25% weight) DIAGONAL_FACTOR: 1/sqrt(2) in Q8.8
-//   (181/256 ~= 0.7071) for equal 8-dir speed
+//   PLAYER_ACCEL: Continuous stride impulse per frame while A held (0.040 px/frame)
+//   PLAYER_FRICTION: Foot drag when coasting (0.040 px/frame, stops in ~20 frames)
+//   PLAYER_MAX_SPEED: Comfortable human jogging pace (0.95 px/frame ~= 57 px/sec)
+//   PLAYER_INERTIA: Steering blend factor (0.25 = 75% instant turn, 25% weight)
+//   DIAGONAL_FACTOR: 1/sqrt(2) in Q8.8 (181/256 ~= 0.7071) for equal 8-dir speed
 
 static const fp_t PLAYER_STEP_IMPULSE =
     FLOAT_TO_FP(0.25);                               // Initial stride impulse
 static const fp_t PLAYER_ACCEL = FLOAT_TO_FP(0.040); // Stride impulse per frame
 static const fp_t PLAYER_FRICTION = FLOAT_TO_FP(0.040); // Natural foot friction
-static const fp_t PLAYER_BRAKE_FRICTION =
-    FLOAT_TO_FP(0.12);                                  // Foot-plant brake drag
 static const fp_t PLAYER_MAX_SPEED = FLOAT_TO_FP(0.95); // Max jogging speed
 static const fp_t PLAYER_INERTIA =
     FLOAT_TO_FP(0.25);                   // Agile human steering (small inertia)
 static const fp_t DIAGONAL_FACTOR = 181; // 1/sqrt(2) in Q8.8 (~0.7071)
+
+// =============================================================================
+// PLAYER SPEED TIERS (GTA-STYLE LOCOMOTION)
+// =============================================================================
+// Walk:   D-pad only, no stamina cost, slow but safe — barely outruns the
+//         initial blackhole (BH_BASE_SPEED = 0.20). Encourages players to
+//         run/sprint as difficulty ramps.
+// Run:    D-pad + A held, moderate stamina drain, comfortable pace.
+// Sprint: D-pad + A tapped rapidly, heavy stamina drain. Speed scales
+//         proportionally with tap frequency (faster taps = faster sprint).
+static const fp_t PLAYER_WALK_SPEED   = FLOAT_TO_FP(0.38);  // ~40% of max
+static const fp_t PLAYER_RUN_SPEED    = FLOAT_TO_FP(0.72);  // ~75% of max
+static const fp_t PLAYER_SPRINT_SPEED = FLOAT_TO_FP(0.95);  // 100% (== PLAYER_MAX_SPEED)
+
+// Per-tier acceleration values
+static const fp_t PLAYER_WALK_ACCEL   = FLOAT_TO_FP(0.025); // Slow, heavy stroll
+static const fp_t PLAYER_RUN_ACCEL    = FLOAT_TO_FP(0.040); // Same as original PLAYER_ACCEL
+static const fp_t PLAYER_SPRINT_ACCEL = FLOAT_TO_FP(0.055); // Burst acceleration
+
+// =============================================================================
+// SPRINT TAP DETECTION CONSTANTS
+// =============================================================================
+// Sprint is activated by tapping A rapidly (release -> re-press within window).
+// Sprint SPEED scales with tap FREQUENCY — faster taps = faster sprint.
+//
+// State machine: track frames between consecutive A presses (tapInterval).
+//   tapInterval <  SPRINT_TAP_WINDOW -> sprinting (speed proportional to 1/tapInterval)
+//   tapInterval >= SPRINT_TAP_WINDOW -> not sprinting (just running if A held)
+//
+// A minimum of SPRINT_TAP_COUNT_NEEDED consecutive fast taps is required
+// before entering sprint mode (prevents accidental single fast press).
+static const uint8_t SPRINT_TAP_WINDOW       = 15; // Max frames between A presses to count as sprint tap (~250ms at 60 FPS)
+static const uint8_t SPRINT_TAP_COUNT_NEEDED = 2;  // Fast taps needed before sprint activates
+static const uint8_t SPRINT_SUSTAIN_WINDOW   = 20; // If A is HELD (not tapped) for this many frames, downgrade to run
+
+// =============================================================================
+// STAMINA SYSTEM CONSTANTS
+// =============================================================================
+// Stamina is a uint8_t (0-255) representing the player's endurance pool.
+// Depletes while running/sprinting, regenerates passively over time.
+//
+// GTA:SA-style regen behavior:
+//   - Idle:    fastest regen (STAMINA_REGEN_IDLE per tick)
+//   - Walk:    slower regen  (STAMINA_REGEN_WALK per tick)
+//   - Run:     NO regen, moderate drain
+//   - Sprint:  NO regen, heavy drain
+//   - Coffee:  instant stamina boost
+//   - Food:    instant stamina loss (in addition to speed slow debuff)
+static const uint8_t STAMINA_MAX             = 255;
+static const uint8_t STAMINA_START           = 255;  // Start fully rested
+
+// Drain rates: stamina points lost per drain tick
+static const uint8_t STAMINA_RUN_DRAIN       = 1;
+static const uint8_t STAMINA_SPRINT_DRAIN    = 3;
+
+// Drain tick intervals: frames between each drain tick (higher = slower drain)
+// Run:    drain 1 point every 10 frames -> ~42 sec to deplete from full
+// Sprint: drain 3 points every 4 frames -> ~5.7 sec to deplete from full
+static const uint8_t STAMINA_RUN_DRAIN_INTERVAL    = 10;
+static const uint8_t STAMINA_SPRINT_DRAIN_INTERVAL  = 4;
+
+// Regen tick values and interval
+// Idle:  regen 2 every 15 frames -> ~32 sec to fully recover
+// Walk:  regen 1 every 15 frames -> ~64 sec to fully recover
+static const uint8_t STAMINA_REGEN_IDLE      = 2;
+static const uint8_t STAMINA_REGEN_WALK      = 1;
+static const uint8_t STAMINA_REGEN_INTERVAL  = 15;
+
+// Minimum stamina required to INITIATE running or sprinting
+// (once started, you drain until 0 before forced downgrade)
+static const uint8_t STAMINA_MIN_TO_RUN      = 10;
+static const uint8_t STAMINA_MIN_TO_SPRINT   = 25;
+
+// Coffee powerup stamina recovery (added on top of existing speed boost)
+static const uint8_t STAMINA_COFFEE_RECOVERY = 80;
+
+// Food hazard stamina drain (added on top of existing speed slow debuff)
+static const uint8_t STAMINA_FOOD_APPLE_DRAIN    = 5;
+static const uint8_t STAMINA_FOOD_PIZZA_DRAIN    = 15;
+static const uint8_t STAMINA_FOOD_TACO_DRAIN     = 20;
+static const uint8_t STAMINA_FOOD_BURGER_DRAIN   = 30;
+static const uint8_t STAMINA_FOOD_FRIES_DRAIN    = 25;
+static const uint8_t STAMINA_FOOD_CAKE_DRAIN     = 40;
+static const uint8_t STAMINA_FOOD_DONUT_DRAIN    = 35;
+static const uint8_t STAMINA_FOOD_ICECREAM_DRAIN = 50;
+
+// =============================================================================
+// STAMINA BAR HUD CONSTANTS
+// =============================================================================
+// Vertical bar on the right side of the screen showing current stamina.
+// Fills from bottom (empty) to top (full). Blinks when critically low.
+static const uint8_t STAMINA_BAR_X       = 124;  // X position (right edge)
+static const uint8_t STAMINA_BAR_Y       = 16;   // Y position (below score box)
+static const uint8_t STAMINA_BAR_WIDTH   = 3;    // Width in pixels
+static const uint8_t STAMINA_BAR_HEIGHT  = 44;   // Height in pixels
+static const uint8_t STAMINA_CRITICAL_THRESHOLD = 38;  // ~15% — bar blinks below this
+
+// =============================================================================
+// GAME-OVER COOLDOWN CONSTANTS
+// =============================================================================
+// Brief no-input cooldown screen after game over, before showing title/menu.
+// Prevents accidental menu selection from residual sprint-tapping when the
+// player dies while frantically tapping A to escape the whitehole.
+static const uint8_t GAMEOVER_COOLDOWN_FRAMES = 90;  // ~1.5 sec at 60 FPS
 
 // Player hitbox size in pixels (used for collision detection)
 static const uint8_t PLAYER_WIDTH = 10;
