@@ -29,6 +29,7 @@ void Game::init(HalStorage& storage) {
     state = STATE_TITLE;
     score = 0;
     comboMultiplier = 1;
+    gameOverCooldown = 0;
 }
 
 // =============================================================================
@@ -74,6 +75,7 @@ void Game::reset() {
     entities.init();
     score = 0;
     comboMultiplier = 1;
+    gameOverCooldown = 0;
 
     // Pre-populate 2 spacious items across the plane:
     // 1. Diamond in the whitehole risk-reward orbit (52px from whitehole, safe from 30px charge)
@@ -127,10 +129,10 @@ void Game::updatePlaying(HalInput& input, fp_t dt) {
     bool left  = input.pressed(BTN_LEFT);
     bool right = input.pressed(BTN_RIGHT);
     bool accel = input.pressed(BTN_A);
-    bool brake = input.pressed(BTN_B);
+    bool justA = input.justPressed(BTN_A);
 
     // 2. Update player movement with delta time
-    player.update(up, down, left, right, accel, brake, dt);
+    player.update(up, down, left, right, accel, justA, dt);
 
     // 3. Update world (camera, blackhole, difficulty, timers) with delta time
     world.update(player.x, player.y, dt);
@@ -298,6 +300,7 @@ void Game::updatePlaying(HalInput& input, fp_t dt) {
                       world.bhX, world.bhY,
                       BH_RENDER_RADIUS * 2, BH_RENDER_RADIUS * 2)) {
         state = STATE_GAMEOVER;
+        gameOverCooldown = GAMEOVER_COOLDOWN_FRAMES;
         if (score > highScore) {
             highScore = score;
             if (storageRef) {
@@ -322,6 +325,10 @@ void Game::renderPlaying(HalRenderer& renderer) {
 
 void Game::updateGameOver(HalInput& input, fp_t dt) {
     (void)dt;
+    if (gameOverCooldown > 0) {
+        gameOverCooldown--;
+        return;
+    }
     if (input.justPressed(BTN_A)) {
         state = STATE_TITLE;
     } else if (input.justPressed(BTN_B)) {
@@ -331,8 +338,19 @@ void Game::updateGameOver(HalInput& input, fp_t dt) {
 }
 
 void Game::renderGameOver(HalRenderer& renderer) {
-    // TODO(M4): Fancy game over screen with animation
-    // For now: simple text display
+    // During cooldown, show title and scores without button prompts
+    // Prevents accidental menu selection from residual sprint-tapping
+    if (gameOverCooldown > 0) {
+        renderer.setCursor(37, 8);
+        renderer.print("GAME OVER");
+        renderer.setCursor(22, 24);
+        renderer.print("Score:");
+        renderer.printNumber(score);
+        renderer.setCursor(22, 36);
+        renderer.print("High:");
+        renderer.printNumber(highScore);
+        return;
+    }
 
     // "GAME OVER" — 9 chars × 6px = 54px → x = (128-54)/2 = 37
     renderer.setCursor(37, 8);
@@ -520,6 +538,18 @@ void Game::renderPlayer(HalRenderer& renderer) {
         }
     }
 
+    // Sprint visual effect: extra motion trail particles
+    if (player.getCurrentMoveTier() == MOVE_SPRINT && (player.vx != 0 || player.vy != 0)) {
+        int16_t trailX = sx - FP_TO_INT(player.vx * 5);
+        int16_t trailY = sy - FP_TO_INT(player.vy * 5);
+        if ((world.gameTime % 2) == 0) {
+            renderer.drawPixel(trailX - 3, trailY - 1, COLOR_WHITE);
+            renderer.drawPixel(trailX + 3, trailY + 1, COLOR_WHITE);
+            renderer.drawPixel(trailX - 1, trailY - 3, COLOR_WHITE);
+            renderer.drawPixel(trailX + 1, trailY + 3, COLOR_WHITE);
+        }
+    }
+
     // Visual feedback for slow debuff: blink (slower cadence)
     if (!player.isSlowed() || ((player.slowTimer / PLAYER_BLINK_DIVISOR) % 2 == 0)) {
         uint8_t playerFrame = player.facingDir + (player.walkFrame * 8);
@@ -581,6 +611,25 @@ void Game::renderHUD(HalRenderer& renderer) {
         renderer.printNumber(comboMultiplier);
     } else if (player.isBoosted()) {
         renderer.print(" !");
+    }
+
+    // === STAMINA BAR (vertical, right edge) ===
+    // Outer border
+    renderer.drawRect(STAMINA_BAR_X, STAMINA_BAR_Y,
+                      STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, COLOR_WHITE);
+
+    // Inner fill (bottom-up, proportional to current stamina)
+    uint8_t fillHeight = (uint8_t)(((uint16_t)player.stamina * (STAMINA_BAR_HEIGHT - 2)) / STAMINA_MAX);
+    if (fillHeight > 0) {
+        int16_t fillY = STAMINA_BAR_Y + (STAMINA_BAR_HEIGHT - 1) - fillHeight;
+        renderer.fillRect(STAMINA_BAR_X + 1, fillY,
+                          STAMINA_BAR_WIDTH - 2, fillHeight, COLOR_WHITE);
+    }
+
+    // Blink entire bar when stamina is critically low
+    if (player.stamina < STAMINA_CRITICAL_THRESHOLD && (world.gameTime / 8) % 2 == 0) {
+        renderer.fillRect(STAMINA_BAR_X, STAMINA_BAR_Y,
+                          STAMINA_BAR_WIDTH, STAMINA_BAR_HEIGHT, COLOR_BLACK);
     }
 }
 

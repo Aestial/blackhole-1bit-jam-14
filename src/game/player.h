@@ -76,9 +76,19 @@
 #include "entity.h"  // For EntityType (used in applyFoodSlow)
 
 // =============================================================================
+// Movement tier enum (GTA-style locomotion)
+// =============================================================================
+enum MoveTier : uint8_t {
+    MOVE_IDLE   = 0,   // Standing still
+    MOVE_WALK   = 1,   // D-pad only — slow, no stamina cost
+    MOVE_RUN    = 2,   // D-pad + A held — moderate speed, stamina drains
+    MOVE_SPRINT = 3    // D-pad + A tapped rapidly — variable speed, heavy stamina drain
+};
+
+// =============================================================================
 // Player — The fat man you control
 // =============================================================================
-// Size: ~30 bytes. Only one instance exists (in Game).
+// Size: ~40 bytes. Only one instance exists (in Game).
 
 struct Player {
     // ---- Position (world space, Q24.8 for large coordinate range) ----
@@ -101,6 +111,19 @@ struct Player {
     // ---- Coffee speed boost power-up ----
     uint8_t boostTimer;      // Frames remaining of speed boost (0 = not boosted)
     fp_t    boostTimerAccum;  // Fractional accumulator for delta-time
+
+    // ---- Stamina system (GTA:SA-style) ----
+    uint8_t stamina;            // Current stamina (0-STAMINA_MAX)
+    uint8_t staminaDrainAccum;  // Frame accumulator for drain tick timing
+    uint8_t staminaRegenAccum;  // Frame accumulator for regen tick timing
+
+    // ---- Sprint tap detection state machine ----
+    MoveTier moveTier;           // Current movement tier (IDLE/WALK/RUN/SPRINT)
+    uint8_t  sprintTapTimer;     // Frames since last A press (for measuring tap interval)
+    uint8_t  sprintTapInterval;  // Frames between the last two A presses (for speed scaling)
+    uint8_t  sprintTapCount;     // Consecutive fast taps counted
+    bool     aPrevPressed;       // A button state previous frame (for edge detection)
+    uint8_t  aHoldTimer;         // Frames A has been held continuously (detect hold vs tap)
 
     // ---- 8-Direction Facing & Walk Animation State ----
     uint8_t facingDir;  // 0..7: PLAYER_DIR_DOWN..PLAYER_DIR_DOWN_LEFT
@@ -168,7 +191,7 @@ struct Player {
     //      x += vx   (fp32_t += fp_t is safe, widening conversion)
     //      y += vy
     //
-    void update(bool up, bool down, bool left, bool right, bool accel, bool brake, fp_t dt = FP_DT_ONE);
+    void update(bool up, bool down, bool left, bool right, bool accel, bool justPressedA, fp_t dt = FP_DT_ONE);
 
     // =========================================================================
     // applyFoodSlow(foodType) — Apply a food slow debuff
@@ -199,6 +222,14 @@ struct Player {
     // =========================================================================
     // Returns: true if boostTimer > 0
     bool isBoosted() const;
+
+    // =========================================================================
+    // Stamina & Movement Tier Helpers
+    // =========================================================================
+    void drainStamina(uint8_t amount);
+    void recoverStamina(uint8_t amount);
+    uint8_t getStaminaPercent() const;
+    MoveTier getCurrentMoveTier() const;
 };
 
 #endif // PLAYER_H

@@ -84,6 +84,7 @@ public:
     uint16_t score;
     uint16_t highScore;
     uint8_t  comboMultiplier;
+    uint8_t  gameOverCooldown; // Frames remaining before accepting input on game-over screen
 
     // =========================================================================
     // init(storage) — One-time initialization
